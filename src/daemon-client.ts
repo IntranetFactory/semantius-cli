@@ -1,5 +1,5 @@
 /**
- * MCP-CLI Daemon Client - IPC client for communicating with daemon workers
+ * semantius-cli Daemon Client - IPC client for communicating with daemon workers
  *
  * Handles spawning daemons, detecting stale connections, and forwarding requests.
  */

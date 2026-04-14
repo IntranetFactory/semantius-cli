@@ -19,7 +19,7 @@ describe('CLI Integration Tests', () => {
     // Create temp directory for test files
     // Use realpath() to resolve Windows 8.3 short names (e.g., RUNNER~1 → runneradmin)
     // so the path matches what the MCP filesystem server expects
-    tempDir = await realpath(await mkdtemp(join(tmpdir(), 'semantius-mcp-integration-')));
+    tempDir = await realpath(await mkdtemp(join(tmpdir(), 'semantius-cli-integration-')));
 
     // Create a test file to read
     testFilePath = join(tempDir, 'test.txt');
@@ -340,7 +340,7 @@ describe('HTTP Transport Integration Tests', () => {
   beforeAll(async () => {
     // Create temp directory for config
     // Use realpath() to resolve Windows 8.3 short names
-    tempDir = await realpath(await mkdtemp(join(tmpdir(), 'semantius-mcp-http-test-')));
+    tempDir = await realpath(await mkdtemp(join(tmpdir(), 'semantius-cli-http-test-')));
 
     // Create config with HTTP-based MCP server
     configPath = join(tempDir, 'mcp_servers.json');

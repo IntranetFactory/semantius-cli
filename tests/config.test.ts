@@ -19,7 +19,7 @@ describe('config', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'semantius-mcp-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'semantius-cli-test-'));
   });
 
   afterEach(async () => {
