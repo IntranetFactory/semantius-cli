@@ -6,10 +6,9 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { mkdtemp, writeFile, rm, mkdir } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm, mkdir, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { $ } from 'bun';
 
 describe('CLI Integration Tests', () => {
   let tempDir: string;
@@ -18,7 +17,9 @@ describe('CLI Integration Tests', () => {
 
   beforeAll(async () => {
     // Create temp directory for test files
-    tempDir = await mkdtemp(join(tmpdir(), 'mcp-cli-integration-'));
+    // Use realpath() to resolve Windows 8.3 short names (e.g., RUNNER~1 → runneradmin)
+    // so the path matches what the MCP filesystem server expects
+    tempDir = await realpath(await mkdtemp(join(tmpdir(), 'mcp-cli-integration-')));
 
     // Create a test file to read
     testFilePath = join(tempDir, 'test.txt');
@@ -59,14 +60,19 @@ describe('CLI Integration Tests', () => {
     const cliPath = join(import.meta.dir, '..', '..', 'src', 'index.ts');
 
     try {
-      // Disable daemon for tests for deterministic behavior
-      const result =
-        await $`MCP_NO_DAEMON=1 bun run ${cliPath} -c ${configPath} ${args}`.nothrow();
-      return {
-        stdout: result.stdout.toString(),
-        stderr: result.stderr.toString(),
-        exitCode: result.exitCode,
-      };
+      // Use Bun.spawn for cross-platform compatibility (Windows + Unix)
+      // - stdin: null prevents hanging when CLI tries to read stdin
+      // - env is passed explicitly for reliable cross-platform behavior
+      const proc = Bun.spawn(['bun', 'run', cliPath, '-c', configPath, ...args], {
+        env: { ...process.env, MCP_NO_DAEMON: '1' },
+        stdin: null,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const exitCode = await proc.exited;
+      const stdout = await new Response(proc.stdout).text();
+      const stderr = await new Response(proc.stderr).text();
+      return { stdout, stderr, exitCode };
     } catch (error: any) {
       return {
         stdout: error.stdout?.toString() || '',
@@ -79,22 +85,34 @@ describe('CLI Integration Tests', () => {
   describe('--help', () => {
     test('shows help message', async () => {
       const cliPath = join(import.meta.dir, '..', '..', 'src', 'index.ts');
-      const result = await $`bun run ${cliPath} --help`.nothrow();
+      const proc = Bun.spawn(['bun', 'run', cliPath, '--help'], {
+        stdin: null,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const exitCode = await proc.exited;
+      const stdout = await new Response(proc.stdout).text();
 
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout.toString()).toContain('mcp-cli');
-      expect(result.stdout.toString()).toContain('Usage:');
-      expect(result.stdout.toString()).toContain('Options:');
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('mcp-cli');
+      expect(stdout).toContain('Usage:');
+      expect(stdout).toContain('Options:');
     });
   });
 
   describe('--version', () => {
     test('shows version', async () => {
       const cliPath = join(import.meta.dir, '..', '..', 'src', 'index.ts');
-      const result = await $`bun run ${cliPath} --version`.nothrow();
+      const proc = Bun.spawn(['bun', 'run', cliPath, '--version'], {
+        stdin: null,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const exitCode = await proc.exited;
+      const stdout = await new Response(proc.stdout).text();
 
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout.toString()).toMatch(/mcp-cli v\d+\.\d+\.\d+/);
+      expect(exitCode).toBe(0);
+      expect(stdout).toMatch(/mcp-cli v\d+\.\d+\.\d+/);
     });
   });
 
@@ -214,16 +232,19 @@ describe('CLI Integration Tests', () => {
 
 
     test('handles tool errors gracefully', async () => {
+      // Use a nonexistent path inside the temp directory to stay within
+      // the filesystem server's allowed directories (cross-platform safe)
+      const nonexistentPath = join(tempDir, 'nonexistent', 'path', 'file.txt');
       const result = await runCli([
         'call',
         'filesystem',
         'read_file',
-        JSON.stringify({ path: '/nonexistent/path/file.txt' }),
+        JSON.stringify({ path: nonexistentPath }),
       ]);
 
       // Server may return error as content or fail - verify error is reported
       const output = result.stdout + result.stderr;
-      expect(output).toMatch(/denied|error|not found|outside|allowed/i);
+      expect(output).toMatch(/denied|error|not found|outside|allowed|no such file/i);
     });
 
     test('handles invalid JSON arguments', async () => {
@@ -268,19 +289,32 @@ describe('CLI Integration Tests', () => {
   describe('error handling', () => {
     test('handles missing config gracefully', async () => {
       const cliPath = join(import.meta.dir, '..', '..', 'src', 'index.ts');
-      const result =
-        await $`bun run ${cliPath} -c /nonexistent/config.json`.nothrow();
+      // Use a path inside tmpdir to avoid cross-platform absolute path issues
+      const nonexistentConfig = join(tmpdir(), 'nonexistent-mcp-config.json');
+      const proc = Bun.spawn(['bun', 'run', cliPath, '-c', nonexistentConfig], {
+        stdin: null,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const exitCode = await proc.exited;
+      const stderr = await new Response(proc.stderr).text();
 
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr.toString()).toContain('not found');
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('not found');
     });
 
     test('handles unknown options', async () => {
       const cliPath = join(import.meta.dir, '..', '..', 'src', 'index.ts');
-      const result = await $`bun run ${cliPath} --unknown-option`.nothrow();
+      const proc = Bun.spawn(['bun', 'run', cliPath, '--unknown-option'], {
+        stdin: null,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const exitCode = await proc.exited;
+      const stderr = await new Response(proc.stderr).text();
 
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr.toString()).toContain('Unknown option');
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Unknown option');
     });
   });
 });
@@ -290,14 +324,17 @@ describe('CLI Integration Tests', () => {
  *
  * These tests verify HTTP-based MCP server connectivity
  * using the deepwiki.com public MCP server.
+ * Tests are skipped if the server is unreachable (e.g., in sandboxed/offline environments).
  */
 describe('HTTP Transport Integration Tests', () => {
   let tempDir: string;
   let configPath: string;
+  let serverReachable = false;
 
   beforeAll(async () => {
     // Create temp directory for config
-    tempDir = await mkdtemp(join(tmpdir(), 'mcp-cli-http-test-'));
+    // Use realpath() to resolve Windows 8.3 short names
+    tempDir = await realpath(await mkdtemp(join(tmpdir(), 'mcp-cli-http-test-')));
 
     // Create config with HTTP-based MCP server
     configPath = join(tempDir, 'mcp_servers.json');
@@ -311,6 +348,18 @@ describe('HTTP Transport Integration Tests', () => {
         },
       })
     );
+
+    // Check if the HTTP server is reachable before running tests
+    try {
+      const response = await fetch('https://mcp.deepwiki.com/mcp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      serverReachable = response.status !== 0;
+    } catch {
+      serverReachable = false;
+    }
   });
 
   afterAll(async () => {
@@ -324,14 +373,16 @@ describe('HTTP Transport Integration Tests', () => {
     const cliPath = join(import.meta.dir, '..', '..', 'src', 'index.ts');
 
     try {
-      // Disable daemon for tests
-      const result =
-        await $`MCP_NO_DAEMON=1 bun run ${cliPath} -c ${configPath} ${args}`.nothrow();
-      return {
-        stdout: result.stdout.toString(),
-        stderr: result.stderr.toString(),
-        exitCode: result.exitCode,
-      };
+      const proc = Bun.spawn(['bun', 'run', cliPath, '-c', configPath, ...args], {
+        env: { ...process.env, MCP_NO_DAEMON: '1' },
+        stdin: null,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const exitCode = await proc.exited;
+      const stdout = await new Response(proc.stdout).text();
+      const stderr = await new Response(proc.stderr).text();
+      return { stdout, stderr, exitCode };
     } catch (error: any) {
       return {
         stdout: error.stdout?.toString() || '',
@@ -353,6 +404,10 @@ describe('HTTP Transport Integration Tests', () => {
 
   describe('info command with HTTP server', () => {
     test('shows HTTP server details', async () => {
+      if (!serverReachable) {
+        console.log('Skipping: deepwiki.com is not reachable');
+        return;
+      }
       const result = await runCli(['info', 'deepwiki']);
 
       expect(result.exitCode).toBe(0);
@@ -366,6 +421,10 @@ describe('HTTP Transport Integration Tests', () => {
 
   describe('grep command with HTTP server', () => {
     test('searches HTTP server tools', async () => {
+      if (!serverReachable) {
+        console.log('Skipping: deepwiki.com is not reachable');
+        return;
+      }
       const result = await runCli(['grep', '*']);
 
       expect(result.exitCode).toBe(0);
