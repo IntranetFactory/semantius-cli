@@ -1,10 +1,10 @@
 /**
- * MCP-CLI Configuration Types and Loader
+ * semantius-cli Configuration Types and Loader
  */
 
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import {
   ErrorCode,
   configInvalidJsonError,
@@ -212,10 +212,12 @@ function parseDotEnv(content: string): Record<string, string> {
 /**
  * Load a .env file and populate process.env.
  * Shell environment takes precedence — existing vars are never overwritten.
- * Searches for .env in the given directory, falling back to cwd.
+ * Searches for .env in the given directory, the executable directory, and cwd.
  */
 export async function loadDotEnv(searchDir?: string): Promise<void> {
-  const dirs = [searchDir, process.cwd()].filter(Boolean) as string[];
+  // Also search the directory containing the executable (for Windows installs)
+  const execDir = dirname(process.execPath);
+  const dirs = [searchDir, execDir, process.cwd()].filter(Boolean) as string[];
   const seen = new Set<string>();
 
   for (const dir of dirs) {
@@ -359,7 +361,7 @@ export function getSocketDir(): string {
   const uid = process.getuid?.() ?? 'unknown';
   // macOS uses /var/folders which is auto-cleaned, Linux uses /tmp
   const base = process.platform === 'darwin' ? '/tmp' : '/tmp';
-  return join(base, `semantius-mcp-${uid}`);
+  return join(base, `semantius-cli-${uid}`);
 }
 
 /**

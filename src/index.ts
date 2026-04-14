@@ -22,6 +22,7 @@ import {
   DEFAULT_TIMEOUT_SECONDS,
   listServerNames,
   loadConfig,
+  loadDotEnv,
 } from './config.js';
 import {
   ErrorCode,
@@ -208,7 +209,7 @@ function parseArgs(args: string[]): ParsedArgs {
       );
       console.error(`  Available servers: ${serverList}`);
       console.error(
-        `  Suggestion: Use 'semantius-mcp info <server>' to see server details, or just 'semantius-mcp' to list all`,
+        `  Suggestion: Use 'semantius-cli info <server>' to see server details, or just 'semantius-cli' to list all`,
       );
       process.exit(ErrorCode.CLIENT_ERROR);
     }
@@ -345,8 +346,12 @@ function parseArgs(args: string[]): ParsedArgs {
  * Print help message
  */
 function printHelp(): void {
+  const missingVars = ['SEMANTIUS_API_KEY', 'SEMANTIUS_ORG'].filter(
+    (v) => !process.env[v],
+  );
+
   console.log(`
-semantius-cli v${VERSION} - A lightweight CLI for MCP servers
+semantius-cli v${VERSION} - CLI for the Semantius platform
 
 Usage:
   semantius-cli [options]                              List all servers and tools
@@ -376,11 +381,11 @@ Output:
 Examples:
   semantius-cli                                        # List all servers
   semantius-cli -d                                     # List with descriptions
-  semantius-cli grep "*file*"                          # Search for file tools
-  semantius-cli info filesystem                        # Show server tools
-  semantius-cli info filesystem read_file              # Show tool schema
-  semantius-cli call filesystem read_file '{}'         # Call tool
-  cat input.json | semantius-cli call server tool      # Read from stdin (no '-' needed)
+  semantius-cli grep "*crud*"                          # Search for crud tools
+  semantius-cli info crud                              # Show server tools
+  semantius-cli info crud create_record                # Show tool schema
+  semantius-cli call crud create_record '{}'           # Call tool
+  cat input.json | semantius-cli call crud create_record  # Read from stdin (no '-' needed)
 
 Environment Variables:
   SEMANTIUS_API_KEY      API key for Semantius (required)
@@ -394,7 +399,15 @@ Config File:
     2. ./mcp_servers.json (current directory)
     3. ~/.mcp_servers.json
     4. ~/.config/mcp/mcp_servers.json
-`);
+    5. <exe directory>/.env (for Windows installations)
+${
+  missingVars.length > 0
+    ? `
+⚠  Missing required environment variables:
+${missingVars.map((v) => `   ${v}`).join('\n')}
+   Set these in a .env file next to the executable or export them in your shell.`
+    : ''
+}`);
 }
 
 /**
@@ -431,6 +444,8 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.command === 'help') {
+    // Load .env early so help can reflect actual missing vars
+    await loadDotEnv();
     printHelp();
     return;
   }
@@ -439,6 +454,9 @@ async function main(): Promise<void> {
     console.log(`semantius-cli v${VERSION}`);
     return;
   }
+
+  // Load .env before checking required env vars (supports .env next to exe)
+  await loadDotEnv();
 
   // Validate required environment variables before running any data command
   checkRequiredEnvVars();

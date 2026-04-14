@@ -228,7 +228,7 @@ export async function connectToServer(
   return withRetry(async () => {
     const client = new Client(
       {
-        name: 'semantius-mcp',
+        name: 'semantius-cli',
         version: VERSION,
       },
       {

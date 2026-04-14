@@ -52,8 +52,8 @@ describe('CLI Error Handling Tests', () => {
   }
 
   describe('Ambiguous command errors', () => {
-    // Case 1: semantius-mcp server tool (without subcommand)
-    test('errors on "semantius-mcp server tool" pattern', async () => {
+    // Case 1: semantius-cli server tool (without subcommand)
+    test('errors on "semantius-cli server tool" pattern', async () => {
       const result = await runCli(['someserver', 'sometool']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('AMBIGUOUS_COMMAND');
@@ -61,8 +61,8 @@ describe('CLI Error Handling Tests', () => {
       expect(result.stderr).toContain('info');
     });
 
-    // Case 2: semantius-mcp server tool '{}' (without subcommand)
-    test('errors on "semantius-mcp server tool json" pattern', async () => {
+    // Case 2: semantius-cli server tool '{}' (without subcommand)
+    test('errors on "semantius-cli server tool json" pattern', async () => {
       const result = await runCli(['someserver', 'sometool', '{}']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('AMBIGUOUS_COMMAND');
@@ -70,7 +70,7 @@ describe('CLI Error Handling Tests', () => {
   });
 
   describe('Unknown subcommand errors', () => {
-    // Case 3: semantius-mcp run server tool
+    // Case 3: semantius-cli run server tool
     test('suggests "call" for "run"', async () => {
       const result = await runCli(['run', 'server', 'tool']);
       expect(result.exitCode).toBe(1);
@@ -78,35 +78,35 @@ describe('CLI Error Handling Tests', () => {
       expect(result.stderr).toContain('call');
     });
 
-    // Case 4: semantius-mcp execute server/tool
+    // Case 4: semantius-cli execute server/tool
     test('suggests "call" for "execute"', async () => {
       const result = await runCli(['execute', 'server/tool']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('call');
     });
 
-    // Case 5: semantius-mcp get server
+    // Case 5: semantius-cli get server
     test('suggests "info" for "get"', async () => {
       const result = await runCli(['get', 'server']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('info');
     });
 
-    // Case 6: semantius-mcp list
+    // Case 6: semantius-cli list
     test('suggests "info" for "list"', async () => {
       const result = await runCli(['list']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('info');
     });
 
-    // Case 7: semantius-mcp search "*file*"
+    // Case 7: semantius-cli search "*file*"
     test('suggests "grep" for "search"', async () => {
       const result = await runCli(['search', '*file*']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('grep');
     });
 
-    // Case 8: semantius-mcp find "*file*"
+    // Case 8: semantius-cli find "*file*"
     test('suggests "grep" for "find"', async () => {
       const result = await runCli(['find', '*file*']);
       expect(result.exitCode).toBe(1);
@@ -115,7 +115,7 @@ describe('CLI Error Handling Tests', () => {
   });
 
   describe('Missing argument errors', () => {
-    // Case 9: semantius-mcp call (missing server and tool)
+    // Case 9: semantius-cli call (missing server and tool)
     test('errors on "call" with no args', async () => {
       const result = await runCli(['call']);
       expect(result.exitCode).toBe(1);
@@ -123,7 +123,7 @@ describe('CLI Error Handling Tests', () => {
       expect(result.stderr).toContain('server');
     });
 
-    // Case 10: semantius-mcp call server (missing tool)
+    // Case 10: semantius-cli call server (missing tool)
     test('errors on "call server" without tool', async () => {
       const result = await runCli(['call', 'server']);
       expect(result.exitCode).toBe(1);
@@ -131,7 +131,7 @@ describe('CLI Error Handling Tests', () => {
       expect(result.stderr).toContain('tool');
     });
 
-    // Case 11: semantius-mcp grep (missing pattern)
+    // Case 11: semantius-cli grep (missing pattern)
     test('errors on "grep" without pattern', async () => {
       const result = await runCli(['grep']);
       expect(result.exitCode).toBe(1);
@@ -141,28 +141,28 @@ describe('CLI Error Handling Tests', () => {
   });
 
   describe('Unknown option errors', () => {
-    // Case 12: semantius-mcp info --server fs
+    // Case 12: semantius-cli info --server fs
     test('errors on unknown "--server" option', async () => {
       const result = await runCli(['info', '--server', 'fs']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('UNKNOWN_OPTION');
     });
 
-    // Case 13: semantius-mcp call server tool --args '{}'
+    // Case 13: semantius-cli call server tool --args '{}'
     test('errors on unknown "--args" option', async () => {
       const result = await runCli(['call', 'server', 'tool', '--args', '{}']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('UNKNOWN_OPTION');
     });
 
-    // Case 19: semantius-mcp --call server tool
+    // Case 19: semantius-cli --call server tool
     test('errors on "--call" as option', async () => {
       const result = await runCli(['--call', 'server', 'tool']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('UNKNOWN_OPTION');
     });
 
-    // Case 20: semantius-mcp -c (missing config path)
+    // Case 20: semantius-cli -c (missing config path)
     test('errors on "-c" without path', async () => {
       const result = await runCli(['-c']);
       expect(result.exitCode).toBe(1);

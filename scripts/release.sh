@@ -1,5 +1,5 @@
 #!/bin/bash
-# Release script for semantius-mcp
+# Release script for semantius-cli
 # Usage: ./scripts/release.sh <version>
 # Example: ./scripts/release.sh 0.1.0
 
