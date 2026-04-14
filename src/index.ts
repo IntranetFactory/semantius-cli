@@ -430,52 +430,51 @@ function buildTarget(server?: string, tool?: string): string {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
+  if (args.command === 'help') {
+    printHelp();
+    return;
+  }
+
+  if (args.command === 'version') {
+    console.log(`semantius-cli v${VERSION}`);
+    return;
+  }
+
+  // Validate required environment variables before running any data command
+  checkRequiredEnvVars();
+
   switch (args.command) {
-    case 'help':
-      printHelp();
+    case 'list':
+      await listCommand({
+        withDescriptions: args.withDescriptions,
+        configPath: args.configPath,
+      });
       break;
 
-    case 'version':
-      console.log(`semantius-cli v${VERSION}`);
+    case 'info':
+      // info always has a server (validated in parseArgs)
+      await infoCommand({
+        target: buildTarget(args.server, args.tool),
+        withDescriptions: args.withDescriptions,
+        configPath: args.configPath,
+      });
       break;
 
-    default:
-      // Validate required environment variables before running any data command
-      checkRequiredEnvVars();
+    case 'grep':
+      await grepCommand({
+        pattern: args.pattern ?? '',
+        withDescriptions: args.withDescriptions,
+        configPath: args.configPath,
+      });
+      break;
 
-      switch (args.command) {
-        case 'list':
-          await listCommand({
-            withDescriptions: args.withDescriptions,
-            configPath: args.configPath,
-          });
-          break;
-
-        case 'info':
-          // info always has a server (validated in parseArgs)
-          await infoCommand({
-            target: buildTarget(args.server, args.tool),
-            withDescriptions: args.withDescriptions,
-            configPath: args.configPath,
-          });
-          break;
-
-        case 'grep':
-          await grepCommand({
-            pattern: args.pattern ?? '',
-            withDescriptions: args.withDescriptions,
-            configPath: args.configPath,
-          });
-          break;
-
-        case 'call':
-          await callCommand({
-            target: buildTarget(args.server, args.tool),
-            args: args.args,
-            configPath: args.configPath,
-          });
-          break;
-      }
+    case 'call':
+      await callCommand({
+        target: buildTarget(args.server, args.tool),
+        args: args.args,
+        configPath: args.configPath,
+      });
+      break;
   }
 }
 

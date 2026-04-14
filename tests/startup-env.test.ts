@@ -72,12 +72,11 @@ describe('Startup env variable validation', () => {
   });
 
   test('succeeds past env check when both variables are set', async () => {
-    const result = await runCliWithEnv(['--help'], {
+    const result = await runCliWithEnv(['grep', 'nonexistent-tool-xyz'], {
       SEMANTIUS_API_KEY: 'test-api-key',
       SEMANTIUS_ORG: 'test-org',
     });
-    // --help bypasses the env check entirely
-    expect(result.exitCode).toBe(0);
+    // Env check passes — any further error is about config/server, not missing vars
     expect(result.stderr).not.toContain('MISSING_ENV_VAR');
   });
 
