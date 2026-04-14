@@ -459,6 +459,28 @@ function substituteEnvVarsInObject<T>(obj: T): T {
 }
 
 /**
+ * Built-in default configuration used when no mcp_servers.json is found.
+ * References ${SEMANTIUS_API_KEY} and ${SEMANTIUS_ORG} which are substituted
+ * from environment variables at load time.
+ */
+export const DEFAULT_CONFIG: McpServersConfig = {
+  mcpServers: {
+    crud: {
+      url: 'https://${SEMANTIUS_ORG}.semantius.ai/mcp',
+      headers: {
+        'x-api-key': '${SEMANTIUS_API_KEY}',
+      },
+    } as HttpServerConfig,
+    cube: {
+      url: 'https://${SEMANTIUS_ORG}.semantius.io/mcp',
+      headers: {
+        'x-api-key': '${SEMANTIUS_API_KEY}',
+      },
+    } as HttpServerConfig,
+  },
+};
+
+/**
  * Get default config search paths
  */
 function getDefaultConfigPaths(): string[] {
@@ -506,7 +528,10 @@ export async function loadConfig(
     }
 
     if (!configPath) {
-      throw new Error(formatCliError(configSearchError()));
+      // No config file found — use built-in default config
+      debug('No config file found; using built-in default config');
+      await loadDotEnv();
+      return substituteEnvVarsInObject(DEFAULT_CONFIG);
     }
   }
 
