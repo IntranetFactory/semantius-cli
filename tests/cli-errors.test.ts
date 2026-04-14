@@ -29,7 +29,16 @@ describe('CLI Error Handling Tests', () => {
         stdout: 'pipe',
         stderr: 'pipe',
       });
+
+      // Kill the process after 4 s to prevent indefinite hangs when the CLI
+      // tries to connect to a non-existent MCP server (e.g. on Windows where
+      // TCP timeouts are longer than on Linux/macOS).
+      const killTimer = setTimeout(() => {
+        try { proc.kill(); } catch { /* process may have already exited */ }
+      }, 4000);
+
       const exitCode = await proc.exited;
+      clearTimeout(killTimer);
       const stdout = await new Response(proc.stdout).text();
       const stderr = await new Response(proc.stderr).text();
       return { stdout, stderr, exitCode };
@@ -172,7 +181,7 @@ describe('CLI Error Handling Tests', () => {
     test('grep command works', async () => {
       const result = await runCli(['grep', '*']);
       expect(result.stderr).not.toContain('UNKNOWN_SUBCOMMAND');
-    });
+    }, 6000);
 
     test('call with slash format works', async () => {
       const result = await runCli(['call', 'server/tool', '{}']);

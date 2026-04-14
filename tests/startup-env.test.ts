@@ -22,7 +22,14 @@ describe('Startup env variable validation', () => {
     // Build env: start from process.env but strip the vars we want to control,
     // then apply the caller's overrides.
     const { SEMANTIUS_API_KEY: _k, SEMANTIUS_ORG: _o, ...baseEnv } = process.env as Record<string, string | undefined>;
-    const env: Record<string, string> = {};
+    // Explicitly set controlled vars to empty string so that Bun's .env auto-loading
+    // and the CLI's own loadDotEnv cannot fill them in when they should be "missing".
+    // Bun respects OS env over .env file values, and an empty string is treated as
+    // "not set" by the checkRequiredEnvVars check (!process.env[v]).
+    const env: Record<string, string> = {
+      SEMANTIUS_API_KEY: '',
+      SEMANTIUS_ORG: '',
+    };
     for (const [key, value] of Object.entries({ ...baseEnv, ...envOverrides })) {
       if (value !== undefined) {
         env[key] = value;
