@@ -7,7 +7,6 @@
 
 import { describe, test, expect } from 'bun:test';
 import { join } from 'node:path';
-import { $ } from 'bun';
 
 describe('CLI Error Handling Tests', () => {
   const cliPath = join(import.meta.dir, '..', 'src', 'index.ts');
@@ -16,13 +15,19 @@ describe('CLI Error Handling Tests', () => {
     args: string[]
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     try {
-      // Disable daemon for tests for deterministic behavior
-      const result = await $`MCP_NO_DAEMON=1 bun run ${cliPath} ${args}`.nothrow();
-      return {
-        stdout: result.stdout.toString(),
-        stderr: result.stderr.toString(),
-        exitCode: result.exitCode,
-      };
+      // Use Bun.spawn for cross-platform compatibility (Windows + Unix)
+      // - stdin: null prevents hanging when CLI tries to read stdin
+      // - env is passed explicitly for reliable cross-platform behavior
+      const proc = Bun.spawn(['bun', 'run', cliPath, ...args], {
+        env: { ...process.env, MCP_NO_DAEMON: '1' },
+        stdin: null,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const exitCode = await proc.exited;
+      const stdout = await new Response(proc.stdout).text();
+      const stderr = await new Response(proc.stderr).text();
+      return { stdout, stderr, exitCode };
     } catch (error: any) {
       return {
         stdout: error.stdout?.toString() || '',
