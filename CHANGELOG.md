@@ -5,8 +5,8 @@
 ### Added
 
 - **Server Instructions Support** - Display MCP server instructions in output
-  - `mcp-cli` (list all): Shows first line of instructions per server
-  - `mcp-cli info <server>`: Shows full instructions under "Instructions:" heading
+  - `semantius-mcp` (list all): Shows first line of instructions per server
+  - `semantius-mcp info <server>`: Shows full instructions under "Instructions:" heading
 
 - **Tool Filtering** - Restrict tools per server via config
   - `allowedTools`: Glob patterns for tools to allow (e.g., `["read_*", "list_*"]`)
@@ -43,8 +43,8 @@
 ### Changed
 
 - **CLI Command Structure**
-  - `mcp-cli` (no args) lists all servers
-  - `mcp-cli info <server>` requires a server argument
+  - `semantius-mcp` (no args) lists all servers
+  - `semantius-mcp info <server>` requires a server argument
 
 - **Grep Output Format**
   - Output now uses space-separated format: `<server> <tool> <description>`
@@ -53,5 +53,5 @@
 
 ### Removed
 
-- **Backward Compatibility Syntax** - `mcp-cli server/tool [args]` now errors with helpful message
+- **Backward Compatibility Syntax** - `semantius-mcp server/tool [args]` now errors with helpful message
 - **`--json` and `--raw` options** - Output format now automatic based on command

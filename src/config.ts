@@ -359,7 +359,7 @@ export function getSocketDir(): string {
   const uid = process.getuid?.() ?? 'unknown';
   // macOS uses /var/folders which is auto-cleaned, Linux uses /tmp
   const base = process.platform === 'darwin' ? '/tmp' : '/tmp';
-  return join(base, `mcp-cli-${uid}`);
+  return join(base, `semantius-mcp-${uid}`);
 }
 
 /**

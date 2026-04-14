@@ -203,7 +203,7 @@ export async function grepCommand(options: GrepOptions): Promise<void> {
     console.log(`No tools found matching "${options.pattern}"`);
     console.log('  Tip: Pattern matches tool names only (not server names)');
     console.log(`  Tip: Use '*' for wildcards, e.g. '*file*' or 'read_*'`);
-    console.log(`  Tip: Run 'mcp-cli' to list all available tools`);
+    console.log(`  Tip: Run 'semantius-mcp' to list all available tools`);
     return;
   }
 

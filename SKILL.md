@@ -1,5 +1,5 @@
 ---
-name: mcp-cli
+name: semantius-mcp
 description: Interface for MCP (Model Context Protocol) servers via CLI. Use when you need to interact with external tools, APIs, or data sources through MCP servers.
 ---
 
@@ -11,76 +11,76 @@ Access MCP servers through the command line. MCP enables interaction with extern
 
 | Command | Output |
 |---------|--------|
-| `mcp-cli` | List all servers and tools |
-| `mcp-cli info <server>` | Show server tools and parameters |
-| `mcp-cli info <server> <tool>` | Get tool JSON schema |
-| `mcp-cli grep "<pattern>"` | Search tools by name |
-| `mcp-cli call <server> <tool>` | Call tool (reads JSON from stdin if no args) |
-| `mcp-cli call <server> <tool> '<json>'` | Call tool with arguments |
+| `semantius-mcp` | List all servers and tools |
+| `semantius-mcp info <server>` | Show server tools and parameters |
+| `semantius-mcp info <server> <tool>` | Get tool JSON schema |
+| `semantius-mcp grep "<pattern>"` | Search tools by name |
+| `semantius-mcp call <server> <tool>` | Call tool (reads JSON from stdin if no args) |
+| `semantius-mcp call <server> <tool> '<json>'` | Call tool with arguments |
 
 **Both formats work:** `<server> <tool>` or `<server>/<tool>`
 
 ## Workflow
 
-1. **Discover**: `mcp-cli` → see available servers
-2. **Explore**: `mcp-cli info <server>` → see tools with parameters
-3. **Inspect**: `mcp-cli info <server> <tool>` → get full JSON schema
-4. **Execute**: `mcp-cli call <server> <tool> '<json>'` → run with arguments
+1. **Discover**: `semantius-mcp` → see available servers
+2. **Explore**: `semantius-mcp info <server>` → see tools with parameters
+3. **Inspect**: `semantius-mcp info <server> <tool>` → get full JSON schema
+4. **Execute**: `semantius-mcp call <server> <tool> '<json>'` → run with arguments
 
 ## Examples
 
 ```bash
 # List all servers
-mcp-cli
+semantius-mcp
 
 # With descriptions  
-mcp-cli -d
+semantius-mcp -d
 
 # See server tools
-mcp-cli info filesystem
+semantius-mcp info filesystem
 
 # Get tool schema (both formats work)
-mcp-cli info filesystem read_file
-mcp-cli info filesystem/read_file
+semantius-mcp info filesystem read_file
+semantius-mcp info filesystem/read_file
 
 # Call tool
-mcp-cli call filesystem read_file '{"path": "./README.md"}'
+semantius-mcp call filesystem read_file '{"path": "./README.md"}'
 
 # Pipe from stdin (no '-' needed!)
-cat args.json | mcp-cli call filesystem read_file
+cat args.json | semantius-mcp call filesystem read_file
 
 # Search for tools
-mcp-cli grep "*file*"
+semantius-mcp grep "*file*"
 
 # Output is raw text (pipe-friendly)
-mcp-cli call filesystem read_file '{"path": "./file"}' | head -10
+semantius-mcp call filesystem read_file '{"path": "./file"}' | head -10
 ```
 
 ## Advanced Chaining
 
 ```bash
 # Chain: search files → read first match
-mcp-cli call filesystem search_files '{"path": ".", "pattern": "*.md"}' \
+semantius-mcp call filesystem search_files '{"path": ".", "pattern": "*.md"}' \
   | head -1 \
-  | xargs -I {} mcp-cli call filesystem read_file '{"path": "{}"}'
+  | xargs -I {} semantius-mcp call filesystem read_file '{"path": "{}"}'
 
 # Loop: process multiple files
-mcp-cli call filesystem list_directory '{"path": "./src"}' \
-  | while read f; do mcp-cli call filesystem read_file "{\"path\": \"$f\"}"; done
+semantius-mcp call filesystem list_directory '{"path": "./src"}' \
+  | while read f; do semantius-mcp call filesystem read_file "{\"path\": \"$f\"}"; done
 
 # Conditional: check before reading
-mcp-cli call filesystem list_directory '{"path": "."}' \
+semantius-mcp call filesystem list_directory '{"path": "."}' \
   | grep -q "README" \
-  && mcp-cli call filesystem read_file '{"path": "./README.md"}'
+  && semantius-mcp call filesystem read_file '{"path": "./README.md"}'
 
 # Multi-server aggregation
 {
-  mcp-cli call github search_repositories '{"query": "mcp", "per_page": 3}'
-  mcp-cli call filesystem list_directory '{"path": "."}'
+  semantius-mcp call github search_repositories '{"query": "mcp", "per_page": 3}'
+  semantius-mcp call filesystem list_directory '{"path": "."}'
 }
 
 # Save to file
-mcp-cli call github get_file_contents '{"owner": "x", "repo": "y", "path": "z"}' > output.txt
+semantius-mcp call github get_file_contents '{"owner": "x", "repo": "y", "path": "z"}' > output.txt
 ```
 
 **Note:** `call` outputs raw text content directly (no jq needed for text extraction)
@@ -96,11 +96,11 @@ mcp-cli call github get_file_contents '{"owner": "x", "repo": "y", "path": "z"}'
 
 | Wrong Command | Error | Fix |
 |---------------|-------|-----|
-| `mcp-cli server tool` | AMBIGUOUS_COMMAND | Use `call server tool` or `info server tool` |
-| `mcp-cli run server tool` | UNKNOWN_SUBCOMMAND | Use `call` instead of `run` |
-| `mcp-cli list` | UNKNOWN_SUBCOMMAND | Use `info` instead of `list` |
-| `mcp-cli call server` | MISSING_ARGUMENT | Add tool name |
-| `mcp-cli call server tool {bad}` | INVALID_JSON | Use valid JSON with quotes |
+| `semantius-mcp server tool` | AMBIGUOUS_COMMAND | Use `call server tool` or `info server tool` |
+| `semantius-mcp run server tool` | UNKNOWN_SUBCOMMAND | Use `call` instead of `run` |
+| `semantius-mcp list` | UNKNOWN_SUBCOMMAND | Use `info` instead of `list` |
+| `semantius-mcp call server` | MISSING_ARGUMENT | Add tool name |
+| `semantius-mcp call server tool {bad}` | INVALID_JSON | Use valid JSON with quotes |
 
 ## Exit Codes
 
