@@ -66,7 +66,7 @@ describe('config', () => {
 
         expect(config.mcpServers.crud).toBeDefined();
         expect(config.mcpServers.cube).toBeDefined();
-        expect((config.mcpServers.crud as any).url).toContain('test-org');
+        expect((config.mcpServers.crud as any).url).toBe('https://test-org.semantius.ai/mcp');
         expect((config.mcpServers.crud as any).headers['x-api-key']).toBe('test-key');
 
         // Restore
