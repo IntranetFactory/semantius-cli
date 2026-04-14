@@ -52,7 +52,7 @@ function formatSystemInstructions(servers: ServerInfo[]): string {
 
   lines.push('# Available MCP Servers');
   lines.push('');
-  lines.push('You have access to the following MCP servers via `mcp-cli`:');
+  lines.push('You have access to the following MCP servers via `semantius-mcp`:');
   lines.push('');
 
   for (const server of servers) {
@@ -81,7 +81,7 @@ function formatSystemInstructions(servers: ServerInfo[]): string {
 
   lines.push('---');
   lines.push('');
-  lines.push('Use `mcp-cli info <server> <tool>` to see tool schema before calling.');
+  lines.push('Use `semantius-mcp info <server> <tool>` to see tool schema before calling.');
 
   return lines.join('\n');
 }

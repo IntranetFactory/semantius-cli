@@ -1,5 +1,5 @@
 #!/bin/bash
-# Release script for mcp-cli
+# Release script for semantius-mcp
 # Usage: ./scripts/release.sh <version>
 # Example: ./scripts/release.sh 0.1.0
 
@@ -104,4 +104,4 @@ echo "  2. Build binaries for Linux and macOS"
 echo "  3. Create the GitHub release"
 echo ""
 echo "Monitor the release at:"
-echo "  https://github.com/philschmid/mcp-cli/actions"
+echo "  https://github.com/IntranetFactory/semantius-cli/actions"

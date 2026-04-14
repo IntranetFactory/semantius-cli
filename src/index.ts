@@ -208,7 +208,7 @@ function parseArgs(args: string[]): ParsedArgs {
       );
       console.error(`  Available servers: ${serverList}`);
       console.error(
-        `  Suggestion: Use 'mcp-cli info <server>' to see server details, or just 'mcp-cli' to list all`,
+        `  Suggestion: Use 'semantius-mcp info <server>' to see server details, or just 'semantius-mcp' to list all`,
       );
       process.exit(ErrorCode.CLIENT_ERROR);
     }
