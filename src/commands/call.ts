@@ -108,6 +108,16 @@ async function parseArgs(
  * Execute the call command
  */
 export async function callCommand(options: CallOptions): Promise<void> {
+  // Parse and validate JSON args early (before loading config/connecting)
+  // so that bad arguments are reported immediately without network I/O.
+  let args: Record<string, unknown>;
+  try {
+    args = await parseArgs(options.args);
+  } catch (error) {
+    console.error((error as Error).message);
+    process.exit(ErrorCode.CLIENT_ERROR);
+  }
+
   let config: McpServersConfig;
 
   try {
@@ -132,14 +142,6 @@ export async function callCommand(options: CallOptions): Promise<void> {
   let serverConfig: ServerConfig;
   try {
     serverConfig = getServerConfig(config, serverName);
-  } catch (error) {
-    console.error((error as Error).message);
-    process.exit(ErrorCode.CLIENT_ERROR);
-  }
-
-  let args: Record<string, unknown>;
-  try {
-    args = await parseArgs(options.args);
   } catch (error) {
     console.error((error as Error).message);
     process.exit(ErrorCode.CLIENT_ERROR);

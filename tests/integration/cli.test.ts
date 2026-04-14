@@ -64,7 +64,7 @@ describe('CLI Integration Tests', () => {
       // - stdin: null prevents hanging when CLI tries to read stdin
       // - env is passed explicitly for reliable cross-platform behavior
       const proc = Bun.spawn(['bun', 'run', cliPath, '-c', configPath, ...args], {
-        env: { ...process.env, MCP_NO_DAEMON: '1' },
+        env: { ...process.env, MCP_NO_DAEMON: '1', SEMANTIUS_API_KEY: 'test-api-key', SEMANTIUS_ORG: 'test-org' },
         stdin: null,
         stdout: 'pipe',
         stderr: 'pipe',
@@ -94,7 +94,7 @@ describe('CLI Integration Tests', () => {
       const stdout = await new Response(proc.stdout).text();
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('mcp-cli');
+      expect(stdout).toContain('semantius-cli');
       expect(stdout).toContain('Usage:');
       expect(stdout).toContain('Options:');
     });
@@ -112,7 +112,7 @@ describe('CLI Integration Tests', () => {
       const stdout = await new Response(proc.stdout).text();
 
       expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/mcp-cli v\d+\.\d+\.\d+/);
+      expect(stdout).toMatch(/semantius-cli v\d+\.\d+\.\d+/);
     });
   });
 
@@ -295,6 +295,12 @@ describe('CLI Integration Tests', () => {
         stdin: null,
         stdout: 'pipe',
         stderr: 'pipe',
+        env: {
+          ...process.env,
+          MCP_NO_DAEMON: '1',
+          SEMANTIUS_API_KEY: 'test-api-key',
+          SEMANTIUS_ORG: 'test-org',
+        },
       });
       const exitCode = await proc.exited;
       const stderr = await new Response(proc.stderr).text();
@@ -374,7 +380,7 @@ describe('HTTP Transport Integration Tests', () => {
 
     try {
       const proc = Bun.spawn(['bun', 'run', cliPath, '-c', configPath, ...args], {
-        env: { ...process.env, MCP_NO_DAEMON: '1' },
+        env: { ...process.env, MCP_NO_DAEMON: '1', SEMANTIUS_API_KEY: 'test-api-key', SEMANTIUS_ORG: 'test-org' },
         stdin: null,
         stdout: 'pipe',
         stderr: 'pipe',

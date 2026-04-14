@@ -260,7 +260,7 @@ export const DEFAULT_DAEMON_TIMEOUT_SECONDS = 60; // 60 seconds idle timeout
  */
 export function debug(message: string): void {
   if (process.env.MCP_DEBUG) {
-    console.error(`[mcp-cli] ${message}`);
+    console.error(`[semantius-cli] ${message}`);
   }
 }
 
@@ -432,7 +432,7 @@ function substituteEnvVars(value: string): string {
       );
     }
     // Non-strict mode: warn but continue
-    console.error(`[mcp-cli] Warning: ${message}`);
+    console.error(`[semantius-cli] Warning: ${message}`);
   }
 
   return result;
@@ -457,6 +457,28 @@ function substituteEnvVarsInObject<T>(obj: T): T {
   }
   return obj;
 }
+
+/**
+ * Built-in default configuration used when no mcp_servers.json is found.
+ * References ${SEMANTIUS_API_KEY} and ${SEMANTIUS_ORG} which are substituted
+ * from environment variables at load time.
+ */
+export const DEFAULT_CONFIG: McpServersConfig = {
+  mcpServers: {
+    crud: {
+      url: 'https://${SEMANTIUS_ORG}.semantius.ai/mcp',
+      headers: {
+        'x-api-key': '${SEMANTIUS_API_KEY}',
+      },
+    } as HttpServerConfig,
+    cube: {
+      url: 'https://${SEMANTIUS_ORG}.semantius.io/mcp',
+      headers: {
+        'x-api-key': '${SEMANTIUS_API_KEY}',
+      },
+    } as HttpServerConfig,
+  },
+};
 
 /**
  * Get default config search paths
@@ -506,7 +528,10 @@ export async function loadConfig(
     }
 
     if (!configPath) {
-      throw new Error(formatCliError(configSearchError()));
+      // No config file found — use built-in default config
+      debug('No config file found; using built-in default config');
+      await loadDotEnv();
+      return substituteEnvVarsInObject(DEFAULT_CONFIG);
     }
   }
 
@@ -534,7 +559,7 @@ export async function loadConfig(
   // Warn if no servers are configured
   if (Object.keys(config.mcpServers).length === 0) {
     console.error(
-      '[mcp-cli] Warning: No servers configured in mcpServers. Add server configurations to use MCP tools.',
+      '[semantius-cli] Warning: No servers configured in mcpServers. Add server configurations to use MCP tools.',
     );
   }
 

@@ -12,6 +12,7 @@ import {
   listServerNames,
   isHttpServer,
   isStdioServer,
+  DEFAULT_CONFIG,
 } from '../src/config';
 
 describe('config', () => {
@@ -45,6 +46,38 @@ describe('config', () => {
     test('throws on missing config file', async () => {
       const configPath = join(tempDir, 'nonexistent.json');
       await expect(loadConfig(configPath)).rejects.toThrow('not found');
+    });
+
+    test('uses built-in default config when no config file is found', async () => {
+      // Run loadConfig from a temp directory that has no mcp_servers.json
+      // to verify the default config is returned instead of throwing.
+      const originalCwd = process.cwd();
+      process.chdir(tempDir);
+      try {
+        // Unset MCP_CONFIG_PATH to avoid using it
+        const savedConfigPath = process.env.MCP_CONFIG_PATH;
+        delete process.env.MCP_CONFIG_PATH;
+
+        // Set env vars so substitution works
+        process.env.SEMANTIUS_API_KEY = 'test-key';
+        process.env.SEMANTIUS_ORG = 'test-org';
+
+        const config = await loadConfig();
+
+        expect(config.mcpServers.crud).toBeDefined();
+        expect(config.mcpServers.cube).toBeDefined();
+        expect((config.mcpServers.crud as any).url).toBe('https://test-org.semantius.ai/mcp');
+        expect((config.mcpServers.crud as any).headers['x-api-key']).toBe('test-key');
+
+        // Restore
+        if (savedConfigPath !== undefined) {
+          process.env.MCP_CONFIG_PATH = savedConfigPath;
+        }
+        delete process.env.SEMANTIUS_API_KEY;
+        delete process.env.SEMANTIUS_ORG;
+      } finally {
+        process.chdir(originalCwd);
+      }
     });
 
     test('throws on invalid JSON', async () => {
@@ -238,6 +271,32 @@ describe('config', () => {
     test('isStdioServer identifies stdio config', () => {
       expect(isStdioServer({ command: 'echo' })).toBe(true);
       expect(isStdioServer({ url: 'https://example.com' })).toBe(false);
+    });
+  });
+
+  describe('DEFAULT_CONFIG', () => {
+    test('has crud and cube servers', () => {
+      expect(DEFAULT_CONFIG.mcpServers.crud).toBeDefined();
+      expect(DEFAULT_CONFIG.mcpServers.cube).toBeDefined();
+    });
+
+    test('crud server is HTTP with correct URL template', () => {
+      const crud = DEFAULT_CONFIG.mcpServers.crud as any;
+      expect(crud.url).toContain('${SEMANTIUS_ORG}');
+      expect(crud.url).toContain('semantius.ai');
+    });
+
+    test('cube server is HTTP with correct URL template', () => {
+      const cube = DEFAULT_CONFIG.mcpServers.cube as any;
+      expect(cube.url).toContain('${SEMANTIUS_ORG}');
+      expect(cube.url).toContain('semantius.io');
+    });
+
+    test('both servers use SEMANTIUS_API_KEY in headers', () => {
+      const crud = DEFAULT_CONFIG.mcpServers.crud as any;
+      const cube = DEFAULT_CONFIG.mcpServers.cube as any;
+      expect(crud.headers['x-api-key']).toBe('${SEMANTIUS_API_KEY}');
+      expect(cube.headers['x-api-key']).toBe('${SEMANTIUS_API_KEY}');
     });
   });
 });
