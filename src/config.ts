@@ -160,6 +160,88 @@ export function isStdioServer(
 }
 
 // ============================================================================
+// .env File Loading
+// ============================================================================
+
+/**
+ * Parse a .env file and return key/value pairs.
+ * Supports:
+ *   - KEY=value
+ *   - KEY="quoted value"
+ *   - KEY='single quoted'
+ *   - # comments and blank lines
+ */
+function parseDotEnv(content: string): Record<string, string> {
+  const result: Record<string, string> = {};
+
+  for (const rawLine of content.split('\n')) {
+    const line = rawLine.trim();
+
+    // Skip comments and blank lines
+    if (!line || line.startsWith('#')) continue;
+
+    const eqIndex = line.indexOf('=');
+    if (eqIndex === -1) continue;
+
+    const key = line.slice(0, eqIndex).trim();
+    if (!key) continue;
+
+    let value = line.slice(eqIndex + 1).trim();
+
+    // Strip inline comments (only outside quotes)
+    // Remove surrounding quotes
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    } else {
+      // Strip trailing inline comment for unquoted values
+      const commentIdx = value.indexOf(' #');
+      if (commentIdx !== -1) {
+        value = value.slice(0, commentIdx).trim();
+      }
+    }
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
+/**
+ * Load a .env file and populate process.env.
+ * Shell environment takes precedence — existing vars are never overwritten.
+ * Searches for .env in the given directory, falling back to cwd.
+ */
+export async function loadDotEnv(searchDir?: string): Promise<void> {
+  const dirs = [searchDir, process.cwd()].filter(Boolean) as string[];
+  const seen = new Set<string>();
+
+  for (const dir of dirs) {
+    const envPath = join(dir, '.env');
+    if (seen.has(envPath)) continue;
+    seen.add(envPath);
+
+    if (!existsSync(envPath)) continue;
+
+    const content = await Bun.file(envPath).text();
+    const vars = parseDotEnv(content);
+
+    let loaded = 0;
+    for (const [key, value] of Object.entries(vars)) {
+      if (process.env[key] === undefined) {
+        process.env[key] = value;
+        loaded++;
+      }
+    }
+
+    debug(`Loaded ${loaded} variable(s) from ${envPath}`);
+    return; // Stop after first .env found
+  }
+}
+
+// ============================================================================
 // Environment Variables & Runtime Configuration
 // ============================================================================
 
@@ -427,6 +509,9 @@ export async function loadConfig(
       throw new Error(formatCliError(configSearchError()));
     }
   }
+
+  // Load .env from the config file's directory (before env var substitution)
+  await loadDotEnv(join(configPath, '..'));
 
   // Read and parse config
   const file = Bun.file(configPath);

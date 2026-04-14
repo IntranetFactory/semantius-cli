@@ -259,10 +259,14 @@ export async function connectToServer(
     try {
       await client.connect(transport);
     } catch (error) {
+      const err = error as Error;
+      // Enhance HTTP errors with the target URL
+      if (isHttpServer(config)) {
+        err.message = `${err.message} (url: ${config.url})`;
+      }
       // Enhance error with captured stderr
       const stderrOutput = stderrChunks.join('').trim();
       if (stderrOutput) {
-        const err = error as Error;
         err.message = `${err.message}\n\nServer stderr:\n${stderrOutput}`;
       }
       throw error;

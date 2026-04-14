@@ -1,18 +1,19 @@
 {
   "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "."
-      ],
-      "env": {
-        "npm_config_registry": "https://registry.npmjs.org"
+    "crud": {
+      "type": "http",
+      "url": "https://${SEMANTIUS_ORG}.semantius.ai/mcp",
+      "headers": {
+        "x-api-key": "${SEMANTIUS_API_KEY}"
       }
     },
-    "deepwiki": {
-      "url": "https://mcp.deepwiki.com/mcp"
+    "cube": {
+      "type": "http",
+      "_url": "http://localhost:3459/mcp",
+      "url": "https://${SEMANTIUS_ORG}.semantius.io/mcp",
+      "headers": {
+        "x-api-key": "${SEMANTIUS_API_KEY}"
+      }
     }
   }
 }
