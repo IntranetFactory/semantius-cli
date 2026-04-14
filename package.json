@@ -1,20 +1,20 @@
 {
-  "name": "mcp-cli",
+  "name": "semantius-cli",
   "version": "0.3.0",
   "description": "A lightweight CLI for interacting with MCP (Model Context Protocol) servers",
   "type": "module",
   "main": "src/index.ts",
   "bin": {
-    "mcp-cli": "src/index.ts"
+    "semantius-cli": "src/index.ts"
   },
   "scripts": {
     "dev": "bun run src/index.ts",
-    "build": "bun build --compile --minify src/index.ts --outfile dist/mcp-cli",
-    "build:linux": "bun build --compile --minify --target=bun-linux-x64 src/index.ts --outfile dist/mcp-cli-linux-x64",
-    "build:linux-arm": "bun build --compile --minify --target=bun-linux-arm64 src/index.ts --outfile dist/mcp-cli-linux-arm64",
-    "build:macos": "bun build --compile --minify --target=bun-darwin-x64 src/index.ts --outfile dist/mcp-cli-darwin-x64",
-    "build:macos-arm": "bun build --compile --minify --target=bun-darwin-arm64 src/index.ts --outfile dist/mcp-cli-darwin-arm64",
-    "build:windows": "bun build --compile --minify --target=bun-windows-x64 src/index.ts --outfile dist/mcp-cli-windows-x64.exe",
+    "build": "bun build --compile --minify src/index.ts --outfile dist/semantius-cli",
+    "build:linux": "bun build --compile --minify --target=bun-linux-x64 src/index.ts --outfile dist/semantius-cli-linux-x64",
+    "build:linux-arm": "bun build --compile --minify --target=bun-linux-arm64 src/index.ts --outfile dist/semantius-cli-linux-arm64",
+    "build:macos": "bun build --compile --minify --target=bun-darwin-x64 src/index.ts --outfile dist/semantius-cli-darwin-x64",
+    "build:macos-arm": "bun build --compile --minify --target=bun-darwin-arm64 src/index.ts --outfile dist/semantius-cli-darwin-arm64",
+    "build:windows": "bun build --compile --minify --target=bun-windows-x64 src/index.ts --outfile dist/semantius-cli-windows-x64.exe",
     "build:all": "bun run build:linux && bun run build:linux-arm && bun run build:macos && bun run build:macos-arm && bun run build:windows",
     "test": "bun test",
     "test:integration": "bun test --timeout 30000 tests/integration",

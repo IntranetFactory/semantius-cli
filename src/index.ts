@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 /**
- * MCP-CLI - A lightweight CLI for interacting with MCP servers
+ * semantius-cli - A lightweight CLI for interacting with MCP servers
  *
  * Commands:
- *   mcp-cli                         List all servers and tools
- *   mcp-cli info <server>            Show server details
- *   mcp-cli info <server> <tool>     Show tool schema
- *   mcp-cli grep <pattern>           Search tools by glob pattern
- *   mcp-cli call <server> <tool>     Call tool (reads JSON from stdin if no args)
- *   mcp-cli call <server> <tool> {}  Call tool with JSON args
+ *   semantius-cli                         List all servers and tools
+ *   semantius-cli info <server>            Show server details
+ *   semantius-cli info <server> <tool>     Show tool schema
+ *   semantius-cli grep <pattern>           Search tools by glob pattern
+ *   semantius-cli call <server> <tool>     Call tool (reads JSON from stdin if no args)
+ *   semantius-cli call <server> <tool> {}  Call tool with JSON args
  */
 
 import { callCommand } from './commands/call.js';
@@ -346,21 +346,21 @@ function parseArgs(args: string[]): ParsedArgs {
  */
 function printHelp(): void {
   console.log(`
-mcp-cli v${VERSION} - A lightweight CLI for MCP servers
+semantius-cli v${VERSION} - A lightweight CLI for MCP servers
 
 Usage:
-  mcp-cli [options]                              List all servers and tools
-  mcp-cli [options] info <server>                Show server details
-  mcp-cli [options] info <server> <tool>         Show tool schema
-  mcp-cli [options] grep <pattern>               Search tools by glob pattern
-  mcp-cli [options] call <server> <tool>         Call tool (reads JSON from stdin if no args)
-  mcp-cli [options] call <server> <tool> <json>  Call tool with JSON arguments
+  semantius-cli [options]                              List all servers and tools
+  semantius-cli [options] info <server>                Show server details
+  semantius-cli [options] info <server> <tool>         Show tool schema
+  semantius-cli [options] grep <pattern>               Search tools by glob pattern
+  semantius-cli [options] call <server> <tool>         Call tool (reads JSON from stdin if no args)
+  semantius-cli [options] call <server> <tool> <json>  Call tool with JSON arguments
 
 Formats (both work):
-  mcp-cli info server tool                       Space-separated
-  mcp-cli info server/tool                       Slash-separated
-  mcp-cli call server tool '{}'                  Space-separated
-  mcp-cli call server/tool '{}'                  Slash-separated
+  semantius-cli info server tool                       Space-separated
+  semantius-cli info server/tool                       Slash-separated
+  semantius-cli call server tool '{}'                  Space-separated
+  semantius-cli call server/tool '{}'                  Slash-separated
 
 Options:
   -h, --help               Show this help message
@@ -369,20 +369,22 @@ Options:
   -c, --config <path>      Path to mcp_servers.json config file
 
 Output:
-  mcp-cli/info/grep        Human-readable text to stdout
+  semantius-cli/info/grep  Human-readable text to stdout
   call                     Raw JSON to stdout (for piping)
   Errors                   Always to stderr
 
 Examples:
-  mcp-cli                                        # List all servers
-  mcp-cli -d                                     # List with descriptions
-  mcp-cli grep "*file*"                          # Search for file tools
-  mcp-cli info filesystem                        # Show server tools
-  mcp-cli info filesystem read_file              # Show tool schema
-  mcp-cli call filesystem read_file '{}'         # Call tool
-  cat input.json | mcp-cli call server tool      # Read from stdin (no '-' needed)
+  semantius-cli                                        # List all servers
+  semantius-cli -d                                     # List with descriptions
+  semantius-cli grep "*file*"                          # Search for file tools
+  semantius-cli info filesystem                        # Show server tools
+  semantius-cli info filesystem read_file              # Show tool schema
+  semantius-cli call filesystem read_file '{}'         # Call tool
+  cat input.json | semantius-cli call server tool      # Read from stdin (no '-' needed)
 
 Environment Variables:
+  SEMANTIUS_API_KEY      API key for Semantius (required)
+  SEMANTIUS_ORG          Organization name for Semantius (required)
   MCP_NO_DAEMON=1        Disable connection caching (force fresh connections)
   MCP_DAEMON_TIMEOUT=N   Set daemon idle timeout in seconds (default: 60)
 
@@ -393,6 +395,24 @@ Config File:
     3. ~/.mcp_servers.json
     4. ~/.config/mcp/mcp_servers.json
 `);
+}
+
+/**
+ * Check that required environment variables are set at startup.
+ * Exits with an error listing each missing variable by name.
+ */
+function checkRequiredEnvVars(): void {
+  const required = ['SEMANTIUS_API_KEY', 'SEMANTIUS_ORG'];
+  const missing = required.filter((v) => !process.env[v]);
+
+  if (missing.length > 0) {
+    for (const v of missing) {
+      console.error(
+        `Error [MISSING_ENV_VAR]: Required environment variable not set: ${v}`,
+      );
+    }
+    process.exit(ErrorCode.CLIENT_ERROR);
+  }
 }
 
 /**
@@ -416,40 +436,46 @@ async function main(): Promise<void> {
       break;
 
     case 'version':
-      console.log(`mcp-cli v${VERSION}`);
+      console.log(`semantius-cli v${VERSION}`);
       break;
 
-    case 'list':
-      await listCommand({
-        withDescriptions: args.withDescriptions,
-        configPath: args.configPath,
-      });
-      break;
+    default:
+      // Validate required environment variables before running any data command
+      checkRequiredEnvVars();
 
-    case 'info':
-      // info always has a server (validated in parseArgs)
-      await infoCommand({
-        target: buildTarget(args.server, args.tool),
-        withDescriptions: args.withDescriptions,
-        configPath: args.configPath,
-      });
-      break;
+      switch (args.command) {
+        case 'list':
+          await listCommand({
+            withDescriptions: args.withDescriptions,
+            configPath: args.configPath,
+          });
+          break;
 
-    case 'grep':
-      await grepCommand({
-        pattern: args.pattern ?? '',
-        withDescriptions: args.withDescriptions,
-        configPath: args.configPath,
-      });
-      break;
+        case 'info':
+          // info always has a server (validated in parseArgs)
+          await infoCommand({
+            target: buildTarget(args.server, args.tool),
+            withDescriptions: args.withDescriptions,
+            configPath: args.configPath,
+          });
+          break;
 
-    case 'call':
-      await callCommand({
-        target: buildTarget(args.server, args.tool),
-        args: args.args,
-        configPath: args.configPath,
-      });
-      break;
+        case 'grep':
+          await grepCommand({
+            pattern: args.pattern ?? '',
+            withDescriptions: args.withDescriptions,
+            configPath: args.configPath,
+          });
+          break;
+
+        case 'call':
+          await callCommand({
+            target: buildTarget(args.server, args.tool),
+            args: args.args,
+            configPath: args.configPath,
+          });
+          break;
+      }
   }
 }
 

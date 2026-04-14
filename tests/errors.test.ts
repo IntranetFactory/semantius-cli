@@ -91,7 +91,7 @@ describe('errors', () => {
       expect(error.message).toContain('unknown');
       expect(error.details).toContain('github');
       expect(error.details).toContain('filesystem');
-      expect(error.suggestion).toContain('mcp-cli github');
+      expect(error.suggestion).toContain('semantius-cli github');
     });
 
     test('serverNotFoundError handles empty server list', () => {
@@ -129,7 +129,7 @@ describe('errors', () => {
       expect(error.message).toContain('unknown');
       expect(error.message).toContain('github');
       expect(error.details).toContain('search');
-      expect(error.suggestion).toContain('mcp-cli github');
+      expect(error.suggestion).toContain('semantius-cli github');
     });
 
     test('toolNotFoundError truncates long tool lists', () => {
@@ -160,7 +160,7 @@ describe('errors', () => {
       const error = invalidTargetError('badformat');
       expect(error.type).toBe('INVALID_TARGET');
       expect(error.details).toContain('server/tool');
-      expect(error.suggestion).toContain('mcp-cli <server>/<tool>');
+      expect(error.suggestion).toContain('semantius-cli <server>/<tool>');
     });
 
     test('invalidJsonArgsError truncates long input', () => {

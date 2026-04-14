@@ -260,7 +260,7 @@ export const DEFAULT_DAEMON_TIMEOUT_SECONDS = 60; // 60 seconds idle timeout
  */
 export function debug(message: string): void {
   if (process.env.MCP_DEBUG) {
-    console.error(`[mcp-cli] ${message}`);
+    console.error(`[semantius-cli] ${message}`);
   }
 }
 
@@ -432,7 +432,7 @@ function substituteEnvVars(value: string): string {
       );
     }
     // Non-strict mode: warn but continue
-    console.error(`[mcp-cli] Warning: ${message}`);
+    console.error(`[semantius-cli] Warning: ${message}`);
   }
 
   return result;
@@ -534,7 +534,7 @@ export async function loadConfig(
   // Warn if no servers are configured
   if (Object.keys(config.mcpServers).length === 0) {
     console.error(
-      '[mcp-cli] Warning: No servers configured in mcpServers. Add server configurations to use MCP tools.',
+      '[semantius-cli] Warning: No servers configured in mcpServers. Add server configurations to use MCP tools.',
     );
   }
 

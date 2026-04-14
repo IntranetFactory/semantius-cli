@@ -64,7 +64,7 @@ describe('CLI Integration Tests', () => {
       // - stdin: null prevents hanging when CLI tries to read stdin
       // - env is passed explicitly for reliable cross-platform behavior
       const proc = Bun.spawn(['bun', 'run', cliPath, '-c', configPath, ...args], {
-        env: { ...process.env, MCP_NO_DAEMON: '1' },
+        env: { ...process.env, MCP_NO_DAEMON: '1', SEMANTIUS_API_KEY: 'test-api-key', SEMANTIUS_ORG: 'test-org' },
         stdin: null,
         stdout: 'pipe',
         stderr: 'pipe',
@@ -374,7 +374,7 @@ describe('HTTP Transport Integration Tests', () => {
 
     try {
       const proc = Bun.spawn(['bun', 'run', cliPath, '-c', configPath, ...args], {
-        env: { ...process.env, MCP_NO_DAEMON: '1' },
+        env: { ...process.env, MCP_NO_DAEMON: '1', SEMANTIUS_API_KEY: 'test-api-key', SEMANTIUS_ORG: 'test-org' },
         stdin: null,
         stdout: 'pipe',
         stderr: 'pipe',
