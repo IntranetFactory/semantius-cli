@@ -78,12 +78,40 @@ Understanding which layer you're working with determines which tools to use:
 
 ## Environment Setup
 
+**First, verify semantius-cli is installed:**
+
+```bash
+semantius-cli --version
+```
+
+If this command fails (command not found, exit code 127), STOP immediately. Do NOT attempt to run any semantius-cli commands. Instead, tell the user:
+
+> "semantius-cli is not installed. Please install it first:
+> - Linux/macOS: curl -fsSL https://raw.githubusercontent.com/IntranetFactory/semantius-cli/main/install.sh | bash
+> - Windows: Run PowerShell as admin and run: irm https://raw.githubusercontent.com/IntranetFactory/semantius-cli/main/install.ps1 | iex"
+
+Do not proceed with any other tasks until the CLI is installed and `semantius-cli --version` returns successfully.
+
+**Then verify environment variables:**
+
+```bash
+semantius-cli info
+```
+
+If this fails with "Missing required environment variables" or similar error, list what's missing and STOP. Required variables:
+- `SEMANTIUS_API_KEY` — your API key
+- `SEMANTIUS_ORG` — your organization name
+
+Do not proceed until both are set and `semantius-cli info` returns successfully.
+
+Once verified, set up credentials:
+
 ```bash
 export SEMANTIUS_API_KEY=your-api-key
 export SEMANTIUS_ORG=your-org-name
 ```
 
-Or place in a `.env` file next to the binary (Windows) or in the current directory (Linux/macOS).
+Or place in a `.env` file next to the executable (Windows) or in the current directory (Linux/macOS).
 
 ---
 
@@ -135,7 +163,12 @@ Full reference: `references/cube-queries.md`, `references/cube-tools.md`
 
 ## Golden Rules
 
-1. **Read before writing** — Before any `create_*`, call `read_*` to check for duplicates.
+1. **Read before writing** — Before any `create_*`, call `read_*` to check for duplicates. ALWAYS first.
+   - Before `create_module` → run `read_module` first
+   - Before `create_entity` → run `read_entity` first
+   - Before `create_permission` → run `read_permission` first
+   - Before `create_role` → run `read_role` first
+   - If the read returns results, use those IDs instead of creating duplicates. Only create if it returns empty.
 2. **Schema first** — Module → Permissions → Entity → Fields. Never skip steps.
 3. **Never create auto-generated fields** — `id`, `label`, `created_at`, `updated_at`, and the `label_column` field are created automatically by `create_entity`.
 4. **`reference_table` mandates relational format** — Any field with `reference_table` MUST use `format: "reference"` or `format: "parent"`. No exceptions.

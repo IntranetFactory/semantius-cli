@@ -105,13 +105,7 @@ unzip skill-creator.skill -d ~/.claude/skills/
 ### Step 3: Run the evals
 
 ```bash
-# From anywhere — the scripts directory is inside the installed skill
-cd ~/.claude/skills/skill-creator
-
-python -m scripts.run_eval \
-  --skill-path ~/.claude/skills/semantius-cli \
-  --eval-set ~/.claude/skills/semantius-cli/evals/evals.json \
-  --model claude-sonnet-4-20250514
+bash skills/semantius-cli/evals/run-evals.sh
 ```
 
 This spawns a `claude -p` subprocess per eval (with-skill vs without-skill in

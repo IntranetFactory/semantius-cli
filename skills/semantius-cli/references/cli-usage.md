@@ -250,6 +250,16 @@ fi
 - Use `2>/dev/null` to suppress errors when testing existence
 - Use `| jq -s '.'` to combine multiple JSON outputs into an array
 
+**jq availability check:** If `jq` may not be available (e.g., minimal containers), detect first:
+```bash
+if command -v jq >/dev/null 2>&1; then
+    ID=$(echo "$response" | jq -r '.[0].id')
+else
+    # Python fallback (works on most systems)
+    ID=$(echo "$response" | python3 -c "import json,sys; print(json.load(sys.stdin)[0].get('id',''))")
+fi
+```
+
 ---
 
 ## Connection Pooling (Daemon)
