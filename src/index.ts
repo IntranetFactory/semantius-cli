@@ -15,6 +15,7 @@ import { callCommand } from './commands/call.js';
 import { grepCommand } from './commands/grep.js';
 import { infoCommand } from './commands/info.js';
 import { listCommand } from './commands/list.js';
+import { markdownCommand } from './commands/markdown.js';
 import {
   DEFAULT_CONCURRENCY,
   DEFAULT_MAX_RETRIES,
@@ -36,12 +37,13 @@ import {
 import { VERSION } from './version.js';
 
 interface ParsedArgs {
-  command: 'list' | 'info' | 'grep' | 'call' | 'help' | 'version';
+  command: 'list' | 'info' | 'grep' | 'call' | 'help' | 'version' | 'markdown';
   server?: string;
   tool?: string;
   pattern?: string;
   args?: string;
   withDescriptions: boolean;
+  withMarkdown: boolean;
   configPath?: string;
 }
 
@@ -112,6 +114,7 @@ function parseArgs(args: string[]): ParsedArgs {
   const result: ParsedArgs = {
     command: 'info',
     withDescriptions: false,
+    withMarkdown: false,
   };
 
   const positional: string[] = [];
@@ -135,6 +138,11 @@ function parseArgs(args: string[]): ParsedArgs {
         result.withDescriptions = true;
         break;
 
+      case '-md':
+      case '--markdown':
+        result.withMarkdown = true;
+        break;
+
       case '-c':
       case '--config':
         result.configPath = args[++i];
@@ -156,9 +164,9 @@ function parseArgs(args: string[]): ParsedArgs {
     }
   }
 
-  // No positional args = list all servers
+  // No positional args = list all servers (or markdown dump if -md)
   if (positional.length === 0) {
-    result.command = 'list';
+    result.command = result.withMarkdown ? 'markdown' : 'list';
     return result;
   }
 
@@ -172,9 +180,9 @@ function parseArgs(args: string[]): ParsedArgs {
     const remaining = positional.slice(1);
     const { server, tool } = parseServerTool(remaining);
 
-    // info without a server → fall back to listing all servers
+    // info without a server → markdown dump if -md, otherwise list all servers
     if (!server) {
-      result.command = 'list';
+      result.command = result.withMarkdown ? 'markdown' : 'list';
       return result;
     }
 
@@ -335,7 +343,8 @@ Formats (both work):
 Options:
   -h, --help               Show this help message
   -v, --version            Show version number
-  -d, --with-descriptions  Include tool descriptions  
+  -d, --with-descriptions  Include tool descriptions
+  -md, --markdown          Dump full documentation as markdown (README, SKILL, all tools)
 
 Output:
   semantius-cli/info/grep  Human-readable text to stdout
@@ -422,6 +431,12 @@ async function main(): Promise<void> {
     case 'list':
       await listCommand({
         withDescriptions: args.withDescriptions,
+        configPath: args.configPath,
+      });
+      break;
+
+    case 'markdown':
+      await markdownCommand({
         configPath: args.configPath,
       });
       break;

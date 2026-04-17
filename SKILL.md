@@ -79,6 +79,7 @@ semantius-cli call crud get_record '{"id": "123"}' > output.txt
 | Flag | Purpose |
 |------|---------|
 | `-d` | Include descriptions |
+| `-md` | Dump full documentation as markdown (README, SKILL, all tools) |
 | `-c <path>` | Specify config file |
 
 ## Common Errors

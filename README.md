@@ -89,6 +89,7 @@ semantius-cli [options] call <server> <tool> <json> Call tool with JSON argument
 | `-h, --help` | Show help message |
 | `-v, --version` | Show version number |
 | `-d, --with-descriptions` | Include tool descriptions |
+| `-md, --markdown` | Dump full documentation as markdown (README, SKILL, all tools) |
 
 
 ### Output

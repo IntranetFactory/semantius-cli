@@ -206,6 +206,13 @@ describe('CLI Error Handling Tests', () => {
       expect(result.stdout).toContain('call');
     });
 
+    test('--help shows -md option', async () => {
+      const result = await runCli(['--help']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('-md');
+      expect(result.stdout).toContain('--markdown');
+    });
+
     test('-h works', async () => {
       const result = await runCli(['-h']);
       expect(result.exitCode).toBe(0);
@@ -216,6 +223,36 @@ describe('CLI Error Handling Tests', () => {
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toMatch(/semantius-cli v\d+\.\d+\.\d+/);
     });
+  });
+
+  describe('Markdown flag (-md)', () => {
+    test('-md is recognized as a valid option (not UNKNOWN_OPTION)', async () => {
+      const result = await runCli(['-md']);
+      expect(result.stderr).not.toContain('UNKNOWN_OPTION');
+    }, 10000);
+
+    test('--markdown is recognized as a valid option (not UNKNOWN_OPTION)', async () => {
+      const result = await runCli(['--markdown']);
+      expect(result.stderr).not.toContain('UNKNOWN_OPTION');
+    }, 10000);
+
+    test('info -md is recognized as a valid option (not UNKNOWN_OPTION)', async () => {
+      const result = await runCli(['info', '-md']);
+      expect(result.stderr).not.toContain('UNKNOWN_OPTION');
+    }, 10000);
+
+    test('-md outputs README.md content', async () => {
+      const result = await runCli(['-md']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('semantius-cli');
+    }, 10000);
+
+    test('-md outputs SKILL.md content', async () => {
+      const result = await runCli(['-md']);
+      expect(result.exitCode).toBe(0);
+      // SKILL.md starts with the skill front matter or heading
+      expect(result.stdout).toContain('Commands');
+    }, 10000);
   });
 
   describe('Invalid JSON arguments (LLM mistakes)', () => {
