@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude plugins *)",
+      "Bash(bash skills/semantius-cli/evals/run-evals.sh)",
+      "Bash(where claude *)"
+    ]
+  },
+  "enabledPlugins": {}
+}

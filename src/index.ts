@@ -417,7 +417,17 @@ async function main(): Promise<void> {
   }
 
   if (args.command === 'version') {
+    await loadDotEnv();
     console.log(`semantius-cli v${VERSION}`);
+    const missingVars = ['SEMANTIUS_API_KEY', 'SEMANTIUS_ORG'].filter(
+      (v) => !process.env[v],
+    );
+    if (missingVars.length > 0) {
+      console.log(`
+⚠  Missing required environment variables:
+${missingVars.map((v) => `   ${v}`).join('\n')}
+   Set these in a .env file next to the executable or export them in your shell.`);
+    }
     return;
   }
 
