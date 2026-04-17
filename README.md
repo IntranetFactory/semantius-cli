@@ -1,19 +1,16 @@
 # semantius-cli
 
-The official CLI for the [Semantius](https://semantius.ai) platform. Connect to your Semantius organization's MCP servers to interact with your data, tools, and APIs directly from the command line or AI agents.
+The official CLI for the [Semantius](https://semantius.com) platform. Connect to your Semantius organization's MCP servers to interact with your data, tools, and APIs directly from the command line or AI agents.
 
 ## Features
 
 - 🪶 **Lightweight** - Minimal dependencies, fast startup
-- 📦 **Single Binary** - Compile to standalone executable via `bun build --compile`
 - 🔧 **Shell-Friendly** - JSON output for call, pipes with `jq`, chaining support
 - 🤖 **Agent-Optimized** - Designed for AI coding agents (Gemini CLI, Claude Code, etc.)
 - 🔌 **Semantius Platform** - Connects to your Semantius organization's `crud` and `cube` MCP servers
 - ⚡ **Connection Pooling** - Lazy-spawn daemon keeps connections warm (60s idle timeout)
 - 🔑 **Zero Config** - Works out of the box with `SEMANTIUS_API_KEY` and `SEMANTIUS_ORG` set
 - 💡 **Actionable Errors** - Structured error messages with available servers and recovery suggestions
-
-![semantius-cli](./comparison.jpeg)
 
 ## Quick Start
 
@@ -92,7 +89,7 @@ semantius-cli [options] call <server> <tool> <json> Call tool with JSON argument
 | `-h, --help` | Show help message |
 | `-v, --version` | Show version number |
 | `-d, --with-descriptions` | Include tool descriptions |
-| `-c, --config <path>` | Path to config file |
+
 
 ### Output
 
@@ -270,87 +267,6 @@ fi
 
 ## Configuration
 
-### Config File Format
-
-The CLI uses `mcp_servers.json`, compatible with Claude Desktop, Gemini or VS Code:
-
-```json
-{
-  "mcpServers": {
-    "local-server": {
-      "command": "node",
-      "args": ["./server.js"],
-      "env": {
-        "API_KEY": "${API_KEY}"
-      },
-      "cwd": "/path/to/directory"
-    },
-    "remote-server": {
-      "url": "https://mcp.example.com",
-      "headers": {
-        "Authorization": "Bearer ${TOKEN}"
-      }
-    }
-  }
-}
-```
-
-**Environment Variable Substitution:** Use `${VAR_NAME}` syntax anywhere in the config. Values are substituted at load time. By default, missing environment variables cause an error with a clear message. Set `MCP_STRICT_ENV=false` to use empty values instead (with a warning).
-
-### Tool Filtering
-
-Restrict which tools are available from a server using `allowedTools` and `disabledTools`:
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
-      "allowedTools": ["read_file", "list_directory"],
-      "disabledTools": ["delete_file"]
-    }
-  }
-}
-```
-
-**Rules:**
-- `allowedTools`: Only tools matching these patterns are available (supports glob: `*`, `?`)
-- `disabledTools`: Tools matching these patterns are excluded
-- **`disabledTools` takes precedence** over `allowedTools`
-- Filtering applies globally to all CLI operations (info, grep, call)
-
-**Examples:**
-```json
-// Only allow read operations
-"allowedTools": ["read_*", "list_*", "search_*"]
-
-// Allow all except destructive operations
-"disabledTools": ["delete_*", "write_*", "create_*"]
-
-// Combine: allow file operations but disable delete
-"allowedTools": ["*file*"],
-"disabledTools": ["delete_file"]
-```
-
-### Config Resolution
-
-The CLI searches for configuration in this order:
-
-1. `MCP_CONFIG_PATH` environment variable
-2. `-c/--config` command line argument
-3. `./mcp_servers.json` (current directory)
-4. `~/.mcp_servers.json`
-5. `~/.config/mcp/mcp_servers.json`
-6. Built-in default config (connects to Semantius `crud` and `cube` servers using `SEMANTIUS_API_KEY` and `SEMANTIUS_ORG`)
-
-### .env File
-
-The CLI loads `.env` files automatically (shell environment variables always take precedence). It searches in this order:
-
-1. Directory of the config file (if using a custom config)
-2. Directory of the executable (useful for Windows installations next to the `.exe`)
-3. Current working directory
 
 ### Environment Variables
 
