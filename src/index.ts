@@ -169,51 +169,16 @@ function parseArgs(args: string[]): ParsedArgs {
   // =========================================================================
 
   if (firstArg === 'info') {
-    result.command = 'info';
     const remaining = positional.slice(1);
     const { server, tool } = parseServerTool(remaining);
 
-    // info requires a server argument - show available servers in error
+    // info without a server → fall back to listing all servers
     if (!server) {
-      // Try to load config synchronously to show available servers
-      let availableServers: string[] = [];
-      const configPaths = [
-        result.configPath,
-        process.env.MCP_CONFIG_PATH,
-        './mcp_servers.json',
-        `${process.env.HOME}/.mcp_servers.json`,
-        `${process.env.HOME}/.config/mcp/mcp_servers.json`,
-      ].filter(Boolean) as string[];
-
-      const fs = require('node:fs');
-      for (const cfgPath of configPaths) {
-        try {
-          const content = fs.readFileSync(cfgPath, 'utf-8');
-          const config = JSON.parse(content);
-          if (config.mcpServers) {
-            availableServers = Object.keys(config.mcpServers);
-            break;
-          }
-        } catch {
-          // Try next path
-        }
-      }
-
-      const serverList =
-        availableServers.length > 0
-          ? availableServers.join(', ')
-          : '(none found)';
-
-      console.error(
-        'Error [MISSING_ARGUMENT]: Missing required argument for info: server',
-      );
-      console.error(`  Available servers: ${serverList}`);
-      console.error(
-        `  Suggestion: Use 'semantius-cli info <server>' to see server details, or just 'semantius-cli' to list all`,
-      );
-      process.exit(ErrorCode.CLIENT_ERROR);
+      result.command = 'list';
+      return result;
     }
 
+    result.command = 'info';
     result.server = server;
     result.tool = tool;
     return result;
