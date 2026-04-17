@@ -250,8 +250,8 @@ describe('CLI Error Handling Tests', () => {
     test('-md outputs SKILL.md content', async () => {
       const result = await runCli(['-md']);
       expect(result.exitCode).toBe(0);
-      // SKILL.md starts with the skill front matter or heading
-      expect(result.stdout).toContain('Commands');
+      // SKILL.md contains skill front matter with 'name: semantius-cli'
+      expect(result.stdout).toContain('name: semantius-cli');
     }, 10000);
   });
 
