@@ -69,11 +69,16 @@ semantius-cli call crud create_entity '{
 }'
 ```
 
+### Entity Naming Rules
+
+- **`table_name` is always plural snake_case** — `products`, `orders`, `order_lines`, not `product`, `order`, `orderLine`
+- **Never create a `users` entity** — Semantius has a built-in `users` table. Any module that needs to reference users must use `reference_table: "users"` pointing at the existing table. Creating a competing `users` or `user` entity will conflict with the built-in table and break authentication.
+
 ### Key Entity Fields
 
 | Field | Notes |
 |-------|-------|
-| `table_name` | Snake_case, stable — **never change after creation** |
+| `table_name` | **Plural** snake_case, stable — **never change after creation** |
 | `singular_label` | Human-readable name; also becomes the label field's title (e.g. "Product Name") |
 | `plural_label` | e.g. "Products" |
 | `label_column` | Snake_case **field name** that identifies a record (e.g. `product_name`). NOT a human-readable title |
@@ -225,7 +230,7 @@ semantius-cli call crud create_field '{
 
 ### `reference` — Cross-Entity Link (Independent Lifecycle)
 
-Use when the child can exist meaningfully without the parent (e.g., Order → Customer):
+Use when the child record is **created independently** and then associated with the parent — it exists and makes sense on its own. Example: a Task is created on its own and linked to a Lead; a Product exists independently of any category. The child can outlive or be reassigned away from the parent.
 
 ```bash
 # Order has an optional assigned sales rep
@@ -246,7 +251,7 @@ semantius-cli call crud create_field '{
 
 ### `parent` — Ownership/Composition (Bound Lifecycle)
 
-Use when the child cannot exist without the parent (e.g., OrderLine → Order):
+Use when the child record is **always created in the context of the parent** and has no meaning outside it — master-detail. Example: an Order Line is created within an Order; a Meeting Attendee is created within a Meeting. You would never create the child record first and link it later.
 
 ```bash
 # Order line belongs to an order

@@ -89,7 +89,9 @@ If the domain has no meaningful SaaS incumbents (e.g., a niche internal tool), s
 | Template vendor | Adopt the vendor's canonical entity names exactly, lowercased to snake_case for `table_name`. E.g. Salesforce helpdesk → `case`, Zendesk → `ticket`, ServiceNow → `incident`. Keep the human-readable Singular/Plural labels in the vendor's own casing (`Case`, `Cases`). Use the vendor's canonical field names, snake_cased (`AccountName` → `account_name`, `CloseDate` → `close_date`). | Same snake_case rule. If the vendor has no name for a field the system needs, add it with an agent-optimised name and mark it as a non-vendor extension in the Notes column. |
 | Agent-optimised | Self-describing, singular nouns, verbose over cryptic (`support_request` beats `ticket`, `sales_opportunity` beats `opp`). | Snake_case, descriptive, no abbreviations (`customer_email_address` beats `cust_email`). Include the noun the field describes (`invoice_total_amount` beats `total`). |
 
-In either mode, `table_name` in the PRD is always snake_case (matches Semantius' stable table-name rule).
+In either mode, `table_name` in the PRD is always **plural** snake_case (e.g., `campaigns`, `leads`, `campaign_members` — never singular). This is a hard Semantius platform requirement.
+
+**Reserved platform tables — never model these as custom entities:** Semantius has built-in tables (`users`, `roles`, `permissions`, etc.) that must not be recreated. Any entity that would naturally be called `users` or `user` must instead be omitted from the PRD; references to users are expressed as `reference_table: "users"` fields pointing at the built-in table. Before finalising the entity list, check `semantius-cli/references/data-modeling.md` for the current list of reserved tables.
 
 ### Stage 3 — Propose the entity list
 
@@ -155,6 +157,8 @@ The goal is to give the user a clear, actionable quality report — not just a l
 
 ### How to run the audit
 
+**Before checking anything else, read `semantius-cli/references/data-modeling.md`** (path: `C:\Users\MartinAmm\.claude\skills\semantius-cli\references\data-modeling.md`). This file is the authoritative source of Semantius platform constraints — entity naming rules, reserved tables, field format rules, relationship rules. It is updated independently of this skill. Any rule in that file overrides or extends the checklist below. Treat findings from it as 🔴 Blockers.
+
 Read the PRD file in full, then work through each check below. Group your findings into three severity levels:
 
 - **🔴 Blocker** — the downstream agent will fail or produce incorrect results (e.g., missing required front-matter, `id` field manually declared, `reference` field missing target table, enum field with no values)
@@ -164,6 +168,11 @@ Read the PRD file in full, then work through each check below. Group your findin
 After listing findings, give an overall summary: how many issues of each severity, and a one-line verdict ("Ready to implement", "Needs minor fixes before implementation", "Significant rework needed").
 
 ### Audit checklist
+
+**Semantius platform constraints** _(from `semantius-cli/references/data-modeling.md` — read the file; treat any violation as 🔴 Blocker)_
+- Every `table_name` is **plural** snake_case (`campaigns`, `leads`, `campaign_members`) — singular names are wrong
+- No entity named `users` or `user` — this conflicts with Semantius's built-in `users` table and breaks authentication. References to users must use `reference_table: "users"` on a `reference`/`parent` field, not a custom entity
+- Check the reference file for any other reserved table names or constraints added since this skill was written
 
 **Front-matter (YAML block)**
 - All six keys present: `artifact`, `system_name`, `system_slug`, `domain`, `naming_mode`, `created_at`
@@ -194,6 +203,8 @@ After listing findings, give an overall summary: how many issues of each severit
 - Every junction table (for M:N relationships) is listed as its own entity in §4 and §5
 - Cardinality (N:1, 1:N, M:N, 1:1) is stated consistently between §5 and §6
 - Delete behaviour is specified in §6 for every parent/reference
+- **`reference` vs `parent` is semantically correct** — `parent` means the child is always created in the context of the parent and has no meaning outside it (master-detail, e.g. order line → order, meeting attendee → meeting). `reference` means the child is created independently and then associated (e.g. task → lead, product → category). Flag as 🟡 Warning any relationship field where the choice looks wrong given the domain.
+- **No obvious missing relationships** — for each entity, consider whether it should link to other entities in the model but doesn't. Common gaps: an entity that represents work or activity with no link to the person/thing it's about; a junction that should exist for an M:N relationship but is missing. Flag gaps as 🟡 Warning with a suggested fix.
 
 **Enumeration completeness**
 - Every `enum` field across all entities has a sub-section in §7
@@ -313,5 +324,6 @@ Treat this as a real analyst engagement, not a form-filling exercise. Concretely
 ## Reference material
 
 - `references/prd-template.md` — the final markdown template, including the required front-matter block, entity-and-fields section format, and the summary section with the relationship cardinality table. Read this at Stage 5 (Create) or Step C4 (Extend) before writing the file.
+- `C:\Users\MartinAmm\.claude\skills\semantius-cli\references\data-modeling.md` — **authoritative Semantius platform constraints**: entity naming rules (plural table_name), reserved system tables, field format rules, relationship rules. Read this at the start of every mode (Create, Audit, Extend) — it is maintained by the semantius-cli skill and updated independently of this file. Rules found there override any conflicting guidance in this skill.
 
 The catalog of common systems, vendors, and entity naming conventions lives in your own training knowledge, not in a reference file. That's deliberate: a fixed catalog would go stale, miss vendors, and imply a whitelist. Trust what you know about the product the user named; if you're genuinely unsure (an unfamiliar regional vendor, a very new product), ask the user for two or three example entity names from their system rather than guessing.
