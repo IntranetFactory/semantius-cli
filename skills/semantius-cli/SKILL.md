@@ -1,6 +1,12 @@
 ---
 name: semantius-cli
-description: Use this skill for anything involving the Semantius platform via semantius-cli. Trigger when the user wants to: create, read, update, or delete entities, fields, modules, permissions, roles, users, or business records; build or query a semantic data model; set up RBAC; insert or import data into Semantius tables; or run analytical queries across Semantius data. Also trigger when writing shell scripts or Bun scripts that chain semantius-cli commands.
+description: >-
+  Use this skill for anything involving the Semantius platform via semantius-cli.
+  Trigger when the user wants to: create, read, update, or delete entities,
+  fields, modules, permissions, roles, users, or business records; build or query
+  a semantic data model; set up RBAC; insert or import data into Semantius
+  tables; or run analytical queries across Semantius data. Also trigger when
+  writing shell scripts or Bun scripts that chain semantius-cli commands.
 ---
 
 # semantius-cli Skill
