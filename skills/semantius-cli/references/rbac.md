@@ -36,7 +36,7 @@ Never use free-form names like `"can_edit"` or `"admin"` — always scope to a m
 # Baseline: always create both read and manage
 semantius-cli call crud create_permission '{
   "data": {
-    "name": "crm:read",
+    "permission_name": "crm:read",
     "description": "Read CRM data",
     "module_id": 3
   }
@@ -44,7 +44,7 @@ semantius-cli call crud create_permission '{
 
 semantius-cli call crud create_permission '{
   "data": {
-    "name": "crm:manage",
+    "permission_name": "crm:manage",
     "description": "Create, update, and delete CRM data",
     "module_id": 3
   }

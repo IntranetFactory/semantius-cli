@@ -33,14 +33,14 @@ Every entity **must** belong to a module.
 
 **Check before creating:**
 ```bash
-semantius-cli call crud read_module '{"filters": "name=eq.crm"}'
+semantius-cli call crud read_module '{"filters": "module_name=eq.crm"}'
 ```
 
 **Create module + baseline permissions (always both):**
 ```bash
-semantius-cli call crud create_module '{"data": {"name": "crm", "label": "CRM", "description": "Customer relationship management"}}'
-semantius-cli call crud create_permission '{"data": {"name": "crm:read", "description": "Read CRM data", "module_id": <id>}}'
-semantius-cli call crud create_permission '{"data": {"name": "crm:manage", "description": "Manage CRM data", "module_id": <id>}}'
+semantius-cli call crud create_module '{"data": {"module_name": "crm", "label": "CRM", "description": "Customer relationship management"}}'
+semantius-cli call crud create_permission '{"data": {"permission_name": "crm:read", "description": "Read CRM data", "module_id": <id>}}'
+semantius-cli call crud create_permission '{"data": {"permission_name": "crm:manage", "description": "Manage CRM data", "module_id": <id>}}'
 ```
 
 Permission naming convention: **always `<module>:<action>`** (e.g., `crm:read`, `crm:manage`, `leads:write`).
@@ -55,6 +55,8 @@ Permission naming convention: **always `<module>:<action>`** (e.g., `crm:read`, 
 semantius-cli call crud create_entity '{
   "data": {
     "table_name": "products",
+    "singular": "product",
+    "plural": "products",
     "singular_label": "Product Name",
     "plural_label": "Products",
     "description": "A catalog product available for sale",
@@ -122,7 +124,7 @@ Choose `format` carefully — **it is immutable after creation**.
 
 | Value | Use |
 |-------|-----|
-| `auto` | **Default — always use this** unless a specific layout requirement exists |
+| `default` | **Default — always use this** unless a specific layout requirement exists |
 | `s` | Small (short text, booleans, status badges) |
 | `m` | Medium |
 | `w` | Wide (long text, descriptions) |
@@ -153,7 +155,7 @@ semantius-cli call crud create_field '{
     "field_name": "description",
     "title": "Description",
     "format": "text",
-    "width": "auto",
+    "width": "default",
     "input_type": "default",
     "field_order": 2,
     "searchable": true
@@ -167,7 +169,7 @@ semantius-cli call crud create_field '{
     "field_name": "price",
     "title": "Price",
     "format": "float",
-    "width": "auto",
+    "width": "default",
     "input_type": "default",
     "field_order": 3
   }
@@ -181,7 +183,7 @@ semantius-cli call crud create_field '{
     "title": "Status",
     "format": "enum",
     "enum_values": ["draft", "active", "discontinued"],
-    "width": "auto",
+    "width": "default",
     "input_type": "default",
     "field_order": 4
   }
@@ -197,7 +199,7 @@ semantius-cli call crud create_field '{
 | `title` | string | Human-readable label shown in UI |
 | `description` | string | Explains what the field represents |
 | `format` | string | **Immutable after creation** — see format table above |
-| `width` | string | `auto` (default), `s`, `m`, `w` |
+| `width` | string | `default` (default), `s`, `m`, `w` |
 | `input_type` | string | `default`, `required`, `readonly`, `disabled`, `hidden` |
 | `field_order` | integer | Controls display order in the UI |
 | `searchable` | boolean | Adds this field to the entity's full-text search index |
@@ -236,7 +238,7 @@ semantius-cli call crud create_field '{
     "reference_table": "users",
     "reference_delete_mode": "clear",
     "is_nullable": true,
-    "width": "auto",
+    "width": "default",
     "input_type": "default"
   }
 }'
@@ -257,7 +259,7 @@ semantius-cli call crud create_field '{
     "reference_table": "orders",
     "reference_delete_mode": "cascade",
     "is_nullable": false,
-    "width": "auto",
+    "width": "default",
     "input_type": "default"
   }
 }'
@@ -272,10 +274,10 @@ Create a junction entity and add two `parent` fields:
 semantius-cli call crud create_entity '{"data": {"table_name": "product_tags", ...}}'
 
 # FK to products
-semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "field_name": "product_id", "format": "parent", "reference_table": "products", "reference_delete_mode": "cascade", "is_nullable": false, "width": "auto", "input_type": "default"}}'
+semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "field_name": "product_id", "format": "parent", "reference_table": "products", "reference_delete_mode": "cascade", "is_nullable": false, "width": "default", "input_type": "default"}}'
 
 # FK to tags
-semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "field_name": "tag_id", "format": "parent", "reference_table": "tags", "reference_delete_mode": "cascade", "is_nullable": false, "width": "auto", "input_type": "default"}}'
+semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "field_name": "tag_id", "format": "parent", "reference_table": "tags", "reference_delete_mode": "cascade", "is_nullable": false, "width": "default", "input_type": "default"}}'
 ```
 
 ---
@@ -414,4 +416,4 @@ semantius-cli call crud read_entity '{"filters": "table_name=eq.<table>"}'
 - Check `label_column` is set and matches a real field with `ctype='label'`
 - Check `field_order` for display sequence
 - Check `input_type` is appropriate
-- Ensure `width: "auto"` unless a specific override is needed
+- Ensure `width: "default"` unless a specific override is needed

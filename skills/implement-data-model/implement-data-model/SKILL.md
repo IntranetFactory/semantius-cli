@@ -53,7 +53,7 @@ Locate the `*-data-model-prd.md` file. Extract:
 - **Human-readable system name** — from the `# ... Data Model PRD` heading
 - **Entity list** — from the entity summary table (§4), in order
 - **Per-entity details** from each entity subsection (§5):
-  - `table_name`, `singular_label`, `plural_label`, `description`, `label_column`
+  - `table_name`, `singular`, `plural`, `singular_label`, `plural_label`, `description`, `label_column`
   - Fields: `field_name`, `format`, required, `title` (= Label column), reference targets, delete modes
   - Enum values from §7
 - **Relationship table** (§6) — confirms `reference_delete_mode` for each FK field
@@ -95,13 +95,13 @@ For each item **named in the PRD**, check whether it exists — nothing more. Do
 
 ```bash
 # Does the module exist?
-semantius-cli call crud read_module '{"filters": "name=eq.<system_slug>"}'
+semantius-cli call crud read_module '{"filters": "module_name=eq.<system_slug>"}'
 
 # Does this specific entity exist?
 semantius-cli call crud read_entity '{"filters": "table_name=eq.<table_name>"}'
 
 # Does this specific permission exist?
-semantius-cli call crud read_permission '{"filters": "name=eq.<slug>:read"}'
+semantius-cli call crud read_permission '{"filters": "permission_name=eq.<slug>:read"}'
 
 # Does this specific field exist?
 semantius-cli call crud read_field '{"filters": "table_name=eq.<table_name>&field_name=eq.<field_name>"}'
@@ -175,7 +175,7 @@ Refer to `semantius-cli/references/data-modeling.md` for the exact CLI syntax fo
 
 **4c. Entities** — `create_entity` for each ✨ entity, in PRD §4 order. After creating, correct the `label_column` field title if needed with `update_field`.
 
-**4d. Fields** — `create_field` for each ✨ field (skipping auto-generated ones), in PRD field order. Always include `width: "auto"` and `input_type: "default"`.
+**4d. Fields** — `create_field` for each ✨ field (skipping auto-generated ones), in PRD field order. Always include `width: "default"` and `input_type: "default"`.
 
 **Second pass** — After all entities exist, create any self-reference fields.
 

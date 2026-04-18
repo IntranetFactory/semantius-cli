@@ -185,7 +185,7 @@ Also use to find cross-references before deletion: `"reference_table=eq.<table_n
 ### `create_module`
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `data` | object | yes | Requires: `name` (snake_case), `label`, `description` |
+| `data` | object | yes | Requires: `module_name` (snake_case), `label`, `description` |
 
 ### `read_module`
 Accepts common read parameters.
@@ -208,10 +208,10 @@ Accepts common read parameters.
 ### `create_permission`
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `data` | object | yes | Requires: `name` (format: `<module>:<action>`), `description`, `module_id` |
+| `data` | object | yes | Requires: `permission_name` (format: `<module>:<action>`), `description`, `module_id` |
 
 ### `read_permission`
-Accepts common read parameters. Key filter: `"name=ilike.<module>:*"` to find a module's permissions.
+Accepts common read parameters. Key filter: `"permission_name=ilike.<module>:*"` to find a module's permissions.
 
 ### `update_permission`
 | Parameter | Type | Required | Description |
