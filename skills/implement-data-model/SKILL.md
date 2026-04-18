@@ -225,11 +225,21 @@ echo "=== Seeding leads ==="
 # ... etc ...
 ```
 
-**Important for FK fields:** The script must use hardcoded realistic IDs or capture IDs from earlier inserts. If the Semantius instance is fresh (entities were just created in Stage 4), you can use a sequential ID assumption and adjust if the run fails. Alternatively, do a quick `read_*` after each entity block to confirm IDs before the next block.
+**Important for FK fields:** After inserting each parent entity block, query the actual IDs with a GET before inserting child records — never assume sequential IDs. Example:
+
+```bash
+# After seeding campaigns, get real IDs before using them in campaign_members
+CAMPAIGN_IDS=$(semantius-cli call crud postgrestRequest '{"method":"GET","path":"/campaigns?select=id,campaign_name&order=id.asc"}')
+# Then extract and use real IDs for FK references
+```
+
+**Enum safety — read the PRD, not your intuition:** Before writing any enum value into a seed record, look it up in the PRD's §7 enum tables for *that specific field*. Different fields on different entities may look similar but have different allowed values (e.g., `campaigns.type` includes `"Direct Mail"` but `leads.lead_source` does not — using the wrong one will fail with a check constraint error). Never guess or copy enum values across fields.
+
+**String safety — ASCII only in seed data:** Do not use Unicode punctuation (em dash `—`, smart quotes `""`/`''`, ellipsis `…`) in seed strings. These characters break bash argument parsing when the script is executed. Use plain ASCII alternatives: `-` instead of `—`, `"` instead of `""`, etc.
 
 Generate realistic data:
 - Real-sounding names and emails (not "Test User 1")
-- Enums: cycle through all valid PRD values so every value appears at least once
+- Enums: cycle through all valid PRD §7 values for that specific field so every value appears at least once
 - Dates: realistic mix of past and future
 - Numbers: plausible domain ranges
 - Booleans: realistic mix
