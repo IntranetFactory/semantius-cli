@@ -61,9 +61,11 @@ Identify the **domain category** (CRM, ITSM/helpdesk, HRIS, LMS, ERP, PIM, CMS, 
 
 When the domain is a well-known SaaS category, there is almost always a handful of mature cloud vendors whose schemas are the de-facto standard. Mirroring one of their schemas has a real benefit: **data migration from or to that vendor becomes trivial**, because entity and field names line up. The trade-off is that those names were designed for humans clicking through a UI in the 2010s, not for LLM agents reasoning about the model in the 2020s.
 
-Draw on your general knowledge of the market to identify **the top 3 cloud platforms** for the domain — ordered by how widely adopted they are among the kind of organization the user seems to be (check Stage 1 for cues about size, sector, budget). Don't invent vendors you're unsure about; if you only confidently know 2, list 2. For each vendor, know two or three of its headline entity names so you can show what its schema looks like — use the vendor's own casing (e.g., Salesforce `Account`/`Opportunity`/`Case`, Zendesk `Ticket`/`User`/`Organization`, ServiceNow `Incident`/`Problem`/`Change`, Workday `Worker`/`Position`, Jira `Issue`/`Project`, HubSpot `Contact`/`Company`/`Deal`, Trello `Board`/`List`/`Card`, Notion `Page`/`Database`/`Block`).
+Draw on your general knowledge of the market to identify **the top 3 cloud platforms** for the domain — ordered by how widely adopted they are among the kind of organization the user seems to be (check Stage 1 for cues about size, sector, budget). Don't invent vendors you're unsure about; if you only confidently know 2, list 2. For each vendor, know two or three of its headline entity names — use the vendor's own casing (e.g., Salesforce `Account`/`Opportunity`/`Case`, Zendesk `Ticket`/`User`/`Organization`, ServiceNow `Incident`/`Problem`/`Change`, Workday `Worker`/`Position`, Jira `Issue`/`Project`, HubSpot `Contact`/`Company`/`Deal`, Trello `Board`/`List`/`Card`, Notion `Page`/`Database`/`Block`). These names go **inside the option descriptions** in the AskUserQuestion call below — do not list them in prose first.
 
-**You MUST use the AskUserQuestion tool here** — do not present this choice in prose. Construct exactly one question with **4 options**: "Agent-optimized" first (the recommended default), followed by the 3 named vendors as individual options. The runtime auto-adds an "Other" option for free-text input — that's how a user picks a vendor outside your top 3.
+**You MUST use the AskUserQuestion tool here.** Do not enumerate the vendors or describe the choices in prose before calling the tool — the option descriptions carry all the information the user needs. The only prose preceding the tool call should be one short framing sentence (e.g. *"{Domain} is a well-established category — here's the choice that drives naming for the rest of this session."*).
+
+Construct exactly one question with **4 options**: "Agent-optimized" first (the recommended default), followed by the 3 named vendors. The runtime auto-adds an "Other" option for free-text input — that's how a user picks a vendor outside your top 3.
 
 Use this exact structure:
 
@@ -71,17 +73,25 @@ Use this exact structure:
 - **header**: `"Schema basis"`
 - **multiSelect**: `false`
 - **options** (in this order — recommended option first per AskUserQuestion convention):
-  1. label `"Agent-optimized (Recommended)"`, description `"Self-describing entity and field names (e.g. customers instead of a cryptic HZ_PARTIES) that LLM agents can reason about without needing vendor-specific knowledge."`
-  2. label `"{Vendor A}"`, description `"Mirror {Vendor A}'s schema (entities like {EntityA1}, {EntityA2}). Easy migration to/from {Vendor A}."`
-  3. label `"{Vendor B}"`, description `"Mirror {Vendor B}'s schema (entities like {EntityB1}, {EntityB2}). Easy migration to/from {Vendor B}."`
-  4. label `"{Vendor C}"`, description `"Mirror {Vendor C}'s schema (entities like {EntityC1}, {EntityC2}). Easy migration to/from {Vendor C}."`
+  1. label `"Agent-optimized (Recommended)"`, description `"Self-describing entity and field names (e.g. customers instead of Oracle's cryptic HZ_PARTIES) that LLM agents can reason about without needing vendor-specific knowledge."`
+  2. label `"{Vendor A}"`, description `"Mirror {Vendor A}'s schema ({entity_a1}, {entity_a2}, {entity_a3}). Easy migration to/from {Vendor A}."`
+  3. label `"{Vendor B}"`, description `"Mirror {Vendor B}'s schema ({entity_b1}, {entity_b2}, {entity_b3}). Easy migration to/from {Vendor B}."`
+  4. label `"{Vendor C}"`, description `"Mirror {Vendor C}'s schema ({entity_c1}, {entity_c2}, {entity_c3}). Easy migration to/from {Vendor C}."`
+
+The example entity names inside the vendor descriptions must be in **lowercase plural snake_case** — not the vendor's UI casing — because that's the actual `table_name` form the user will end up with (per the naming rules table below). E.g. Zylo → `applications, subscriptions, contracts` (not `Application, Subscription, Contract`); Salesforce CRM → `accounts, opportunities, cases` (not `Account, Opportunity, Case`). This keeps the comparison apples-to-apples with the Agent-optimized example.
 
 The "(Recommended)" suffix on Agent-optimized is intentional — it's the better default for new builds.
 
-If the user picks a named vendor → set `naming_mode: template:<vendor>` for the rest of the session.
-If the user picks Agent-optimized → set `naming_mode: agent-optimized`.
-If the user picks "Other" and names a vendor → set `naming_mode: template:<that-vendor>`.
-If the user picks "Other" and asks for something else (e.g. "blend Salesforce and HubSpot") → resolve in conversation, then commit to one `naming_mode` value before continuing.
+**After the AskUserQuestion tool returns**, your very first sentence MUST start with the chosen option name in **bold** so the transcript stays readable (the harness only records the answer ordinal like "A: 2"). Examples:
+- *"**Greenhouse-template** it is — I'll mirror Greenhouse's core object model…"*
+- *"**Agent-optimized** — I'll use self-describing names from first principles…"*
+- *"**Workday Recruiting** — I'll adopt their canonical entity names…"*
+
+Then map the choice to a `naming_mode` value for the rest of the session:
+- Named vendor → `naming_mode: template:<vendor>`
+- Agent-optimized → `naming_mode: agent-optimized`
+- "Other" + vendor name → `naming_mode: template:<that-vendor>`
+- "Other" + something else (e.g. "blend Salesforce and HubSpot") → resolve in conversation, then commit to one `naming_mode` value before continuing.
 
 If the domain has no meaningful SaaS incumbents (e.g., a niche internal tool), skip AskUserQuestion entirely and go straight to agent-optimized naming; tell the user in one sentence why.
 
