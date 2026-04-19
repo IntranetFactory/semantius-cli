@@ -57,30 +57,33 @@ If the category is unclear (e.g., the user says "a system for my coaches"), ask 
 
 Identify the **domain category** (CRM, ITSM/helpdesk, HRIS, LMS, ERP, PIM, CMS, Project Management, Field Service, Subscription Billing, etc.). The next stage depends on this.
 
-### Stage 2 — Offer template-vs-agent-optimized
+### Stage 2 — Offer legacy-vendor compatibility vs agent-optimized
 
-When the domain is a well-known SaaS category, there is almost always a handful of mature cloud vendors whose schemas are the de-facto standard. Using one of their schemas as a template has a real benefit: **data migration from or to that vendor becomes trivial**, because entity and field names line up.
+When the domain is a well-known SaaS category, there is almost always a handful of mature cloud vendors whose schemas are the de-facto standard. Mirroring one of their schemas has a real benefit: **data migration from or to that vendor becomes trivial**, because entity and field names line up. The trade-off is that those names were designed for humans clicking through a UI in the 2010s, not for LLM agents reasoning about the model in the 2020s.
 
-Draw on your general knowledge of the market to name **the top 5 cloud platforms** for the domain — ordered by how widely adopted they are among the kind of organization the user seems to be (check Stage 1 for cues about size, sector, budget). Don't invent vendors you're unsure about; if you only confidently know 3, list 3 and say so. For each vendor, show two or three of its headline entity names so the user can recognize it — use the vendor's own casing (e.g., Salesforce `Account`/`Opportunity`/`Case`, Zendesk `Ticket`/`User`/`Organization`, ServiceNow `Incident`/`Problem`/`Change`, Workday `Worker`/`Position`, Jira `Issue`/`Project`, HubSpot `Contact`/`Company`/`Deal`, Trello `Board`/`List`/`Card`, Notion `Page`/`Database`/`Block`).
+Draw on your general knowledge of the market to identify **the top 3 cloud platforms** for the domain — ordered by how widely adopted they are among the kind of organization the user seems to be (check Stage 1 for cues about size, sector, budget). Don't invent vendors you're unsure about; if you only confidently know 2, list 2. For each vendor, know two or three of its headline entity names so you can show what its schema looks like — use the vendor's own casing (e.g., Salesforce `Account`/`Opportunity`/`Case`, Zendesk `Ticket`/`User`/`Organization`, ServiceNow `Incident`/`Problem`/`Change`, Workday `Worker`/`Position`, Jira `Issue`/`Project`, HubSpot `Contact`/`Company`/`Deal`, Trello `Board`/`List`/`Card`, Notion `Page`/`Database`/`Block`).
 
-Present them together with the "agent-optimized" alternative:
+**You MUST use the AskUserQuestion tool here** — do not present this choice in prose. Construct exactly one question with **4 options**: "Agent-optimized" first (the recommended default), followed by the 3 named vendors as individual options. The runtime auto-adds an "Other" option for free-text input — that's how a user picks a vendor outside your top 3.
 
-> For a **{domain}** the most widely used cloud platforms are:
->
-> 1. **{Vendor A}** — entity terms like `{EntityA1}`, `{EntityA2}`
-> 2. **{Vendor B}** — entity terms like `{EntityB1}`, `{EntityB2}`
-> 3. **{Vendor C}** — …
-> 4. **{Vendor D}** — …
-> 5. **{Vendor E}** — …
->
-> Would you like me to:
->
-> - **(a)** Use one of these as a template — entity and field names mirror that vendor, making future migration to/from them straightforward.
-> - **(b)** Design a modern, agent-optimized model — self-describing entity and field names (e.g. `support_request` over `ticket`, `customer_account` over `account`) that an LLM can reason about without vendor-specific priors.
+Use this exact structure:
 
-Use **AskUserQuestion** with these options if it's available. Accept any other vendor the user names — if they say "model it after Zoho Desk" or "match our Freshsales" or something not in your list, go with it. Your top-5 is a suggestion, not a whitelist. Remember the final choice — it drives naming for the rest of the session.
+- **question**: `"Build a future-proof, agent-optimized model — or stay compatible with a legacy {domain} vendor?"`
+- **header**: `"Schema basis"`
+- **multiSelect**: `false`
+- **options** (in this order — recommended option first per AskUserQuestion convention):
+  1. label `"Agent-optimized (Recommended)"`, description `"Self-describing entity and field names (e.g. customers instead of a cryptic HZ_PARTIES) that LLM agents can reason about without needing vendor-specific knowledge."`
+  2. label `"{Vendor A}"`, description `"Mirror {Vendor A}'s schema (entities like {EntityA1}, {EntityA2}). Easy migration to/from {Vendor A}."`
+  3. label `"{Vendor B}"`, description `"Mirror {Vendor B}'s schema (entities like {EntityB1}, {EntityB2}). Easy migration to/from {Vendor B}."`
+  4. label `"{Vendor C}"`, description `"Mirror {Vendor C}'s schema (entities like {EntityC1}, {EntityC2}). Easy migration to/from {Vendor C}."`
 
-If the domain has no meaningful SaaS incumbents (e.g., a niche internal tool), skip the template offer and go straight to agent-optimized naming; tell the user why.
+The "(Recommended)" suffix on Agent-optimized is intentional — it's the better default for new builds.
+
+If the user picks a named vendor → set `naming_mode: template:<vendor>` for the rest of the session.
+If the user picks Agent-optimized → set `naming_mode: agent-optimized`.
+If the user picks "Other" and names a vendor → set `naming_mode: template:<that-vendor>`.
+If the user picks "Other" and asks for something else (e.g. "blend Salesforce and HubSpot") → resolve in conversation, then commit to one `naming_mode` value before continuing.
+
+If the domain has no meaningful SaaS incumbents (e.g., a niche internal tool), skip AskUserQuestion entirely and go straight to agent-optimized naming; tell the user in one sentence why.
 
 **Naming rules by choice:**
 
@@ -324,7 +327,7 @@ Treat this as a real analyst engagement, not a form-filling exercise. Concretely
 - Prefer named examples to abstract descriptions. "An `opportunity` has a `stage_name` like `prospecting → qualification → proposal → closed_won`" beats "The opportunity tracks its status."
 - Use the user's vocabulary when they've given you specifics. If they say "job" instead of "role", use "job" — unless that collides with a vendor template (e.g., Workday uses both `Job` and `Position` distinctly — in that case clarify).
 - Keep each confirmation gate to one clear question. Don't ambush the user with seven questions at once.
-- Use **AskUserQuestion** at the template-vs-agent-optimized decision point (Mode A Stage 2) if the tool is available — it's the cleanest choice UX. Elsewhere, prose questions are fine because the answers are open-ended.
+- Use **AskUserQuestion** at the legacy-vendor-vs-agent-optimized decision point (Mode A Stage 2) if the tool is available — it's the cleanest choice UX. Elsewhere, prose questions are fine because the answers are open-ended.
 
 ---
 
