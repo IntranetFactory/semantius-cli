@@ -207,31 +207,50 @@ If the user says yes, create records in dependency order (entities with no paren
 
 **Generate a single shell script** for all sample data rather than making individual CLI calls. This avoids context bloat from dozens of sequential tool invocations. Write the script to a temp file, run it once, and check the output.
 
-The script should consist of sequential `semantius-cli call crud postgrestRequest` calls, one per record, piped through a simple status check:
+The script should consist of sequential `semantius-cli call crud postgrestRequest` calls, one per record, capturing inserted IDs directly from the POST response for use in FK fields.
+
+### postgrestRequest response envelope
+
+`postgrestRequest` always wraps its result in `{"request":{...},"response":{"status":201,"data":[{...}]}}`. The inserted record is at `response.data[0]`, **not** at the top level. Always use this extractor:
+
+```bash
+# Correct — navigate the envelope
+ID=$(semantius-cli call crud postgrestRequest '{"method":"POST","path":"/campaigns","body":{...}}' \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['response']['data'][0]['id'])")
+
+# WRONG — treats response as a bare array, always fails with KeyError
+ID=$(... | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
+```
+
+The same envelope applies to GET — use `d['response']['data']` to access the array:
+
+```bash
+COUNT=$(semantius-cli call crud postgrestRequest '{"method":"GET","path":"/campaigns?select=id"}' \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['response']['data']))")
+```
+
+### Script pattern
 
 ```bash
 #!/usr/bin/env bash
 set -e
 
-echo "=== Seeding users ==="
-semantius-cli call crud postgrestRequest '{"method":"POST","path":"/users","body":{"username":"jsmith","first_name":"Jane","last_name":"Smith","email":"jsmith@acme.io","user_role":"SDR","is_active":true}}'
-semantius-cli call crud postgrestRequest '{"method":"POST","path":"/users","body":{"username":"mbrown","first_name":"Mark","last_name":"Brown","email":"mbrown@acme.io","user_role":"AE","is_active":true}}'
-# ... remaining users ...
+PG='semantius-cli call crud postgrestRequest'
 
 echo "=== Seeding campaigns ==="
-# ... campaigns using user IDs returned above ...
+C_SPRING=$($PG '{"method":"POST","path":"/campaigns","body":{"campaign_name":"Spring Launch","status":"active"}}' \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['response']['data'][0]['id'])")
+C_FALL=$($PG '{"method":"POST","path":"/campaigns","body":{"campaign_name":"Fall Promo","status":"draft"}}' \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['response']['data'][0]['id'])")
+echo "  spring=$C_SPRING fall=$C_FALL"
 
 echo "=== Seeding leads ==="
+# Use captured IDs for FK fields — never assume sequential IDs
+$PG "{\"method\":\"POST\",\"path\":\"/leads\",\"body\":{\"lead_name\":\"Jane Smith\",\"campaign_id\":$C_SPRING}}" > /dev/null
 # ... etc ...
 ```
 
-**Important for FK fields:** After inserting each parent entity block, query the actual IDs with a GET before inserting child records — never assume sequential IDs. Example:
-
-```bash
-# After seeding campaigns, get real IDs before using them in campaign_members
-CAMPAIGN_IDS=$(semantius-cli call crud postgrestRequest '{"method":"GET","path":"/campaigns?select=id,campaign_name&order=id.asc"}')
-# Then extract and use real IDs for FK references
-```
+**Important for FK fields:** Capture IDs directly from each POST response — do not make a separate GET query to look them up by name. Filters with spaces (e.g. `?campaign_name=eq.Spring Launch`) require URL encoding; capturing from the POST response avoids this entirely.
 
 **Enum safety — read the PRD, not your intuition:** Before writing any enum value into a seed record, look it up in the PRD's §7 enum tables for *that specific field*. Different fields on different entities may look similar but have different allowed values (e.g., `campaigns.type` includes `"Direct Mail"` but `leads.lead_source` does not — using the wrong one will fail with a check constraint error). Never guess or copy enum values across fields.
 

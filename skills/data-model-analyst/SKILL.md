@@ -129,6 +129,8 @@ For each confirmed entity, draft a field list. Present each entity as its own ta
 
 **Automatic fields — omit them from the table.** Semantius auto-creates `id`, `created_at`, `updated_at`, and a `label` for every entity. Don't redeclare. Do declare the `label_column` field (the human-identifying name, e.g. `account_name` for an Account, `case_number` for a Case) as a normal row — mark it with label = "Name" (or whatever reads naturally) and call out in the Notes that it's the entity's label column.
 
+> **⚠️ label_column must be a string field — never a FK.** When `create_entity` runs, Semantius auto-creates a field whose `field_name` equals the `label_column` value. If `label_column` is set to a `reference` or `parent` FK field name (e.g. `tag_id`), the platform auto-creates `tag_id` as a label field and the implementing agent then tries to create `tag_id` again as a FK — causing a conflict that blocks implementation. **Junction tables** are the most common trap: they have no obvious string identifier, so it is tempting to use one of the FK columns as the label. Instead, always add a dedicated `string` field (e.g. `product_tag_label`) to serve as the `label_column`, and note in the PRD that the caller must populate it on record creation (e.g. `"{product_name} / {tag_name}"`). This rule applies to all entities, not just junctions.
+
 **Naming a field that holds a relationship:** the convention is `<target_singular>_id` for references/parents (`account_id`, `assigned_user_id`, `parent_case_id`). The Reference column expresses the target and cardinality, e.g. `→ accounts (N:1)` for a many-to-one link where many contacts belong to one account.
 
 After the field tables, present for each entity a short **Relationships** section that restates all links in prose + a cardinality table. This section is for humans — the field tables are for the agent. Example:
@@ -143,9 +145,11 @@ Once all entities have fields, summarise and ask the user: *"Any fields to add, 
 
 ### Stage 5 — Write the PRD file
 
-Save the final PRD to the workspace folder as `{system_slug}-data-model-prd.md` where `{system_slug}` is snake_case (e.g., `acme_crm`, `helpdesk`, `fieldforce_lms`).
-
 Use the template in `references/prd-template.md` — it has the exact section order, front-matter block, and rendering conventions that work for both human review and agent ingestion. Keep the PRD self-contained (a downstream agent should not need any prior conversation to implement the model).
+
+**Before saving, run a self-audit pass on the draft.** Work through every 🔴 Blocker check from the Audit checklist (Mode B) and fix any issues in the draft before writing the file. Do not save a PRD that would fail its own audit. Warnings and suggestions may be noted in §8 open questions rather than blocking the save.
+
+Save the final PRD to the workspace folder as `{system_slug}-data-model-prd.md` where `{system_slug}` is snake_case (e.g., `acme_crm`, `helpdesk`, `fieldforce_lms`).
 
 When you share the file back, use a single `computer://` link and a one-sentence summary. No long post-amble.
 
@@ -186,6 +190,7 @@ After listing findings, give an overall summary: how many issues of each severit
 
 **Entity health (for each entity in §5)**
 - A `label_column` field is declared (notes say it's the entity's label)
+- 🔴 **`label_column` is a `string` (or other scalar) field — never a `reference` or `parent` FK.** Semantius auto-creates a field with the same name as `label_column`; if that name belongs to a FK field the agent will try to create it twice, causing a platform conflict. For junction tables specifically, verify a dedicated scalar label field exists (e.g. `product_tag_label`) — do not accept a FK column as the label_column.
 - No auto-fields declared (`id`, `created_at`, `updated_at`, label)
 - Every `enum` field has its allowed values listed in the Notes column
 - Every `reference` or `parent` field has a target table in the Notes column, with cardinality (e.g., `→ accounts (N:1)`)
@@ -289,6 +294,8 @@ Update the file in place:
 - Add new enum sub-sections to §7 if needed
 - Update `created_at` in the front-matter to today's date
 - Add a short note to §8 open questions if any ambiguities came up during the session
+
+**Before saving, run a self-audit pass on the updated draft.** Work through every 🔴 Blocker check from the Audit checklist (Mode B) and fix any issues before writing. Do not save a PRD that would fail its own audit.
 
 Save back to the same filename in the workspace folder. Share the `computer://` link with a one-sentence summary of what changed.
 
