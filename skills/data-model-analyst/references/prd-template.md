@@ -12,7 +12,7 @@ artifact: semantic-data-model-prd
 system_name: {{System display name}}
 system_slug: {{system_slug}}
 domain: {{CRM | ITSM | HRIS | LMS | ERP | PIM | Project Management | Field Service | Subscription Billing | CMS | custom}}
-naming_mode: {{template:<vendor> | agent-optimised}}
+naming_mode: {{template:<vendor> | agent-optimized}}
 created_at: {{YYYY-MM-DD}}
 ---
 
@@ -60,7 +60,7 @@ _(repeat section 3 per entity, numbered 3.1, 3.2, …)_
 
 A single table showing every link between entities. An agent uses this to sanity-check that each reference field in §3 has a corresponding row here.
 
-| From | Field | To | Cardinality | Kind | Delete behaviour |
+| From | Field | To | Cardinality | Kind | Delete behavior |
 |---|---|---|---|---|---|
 | `{{table_a}}` | `{{field}}` | `{{table_b}}` | {{N:1 \| 1:1 \| 1:N \| M:N}} | {{reference \| parent \| junction}} | {{restrict \| clear \| cascade}} |
 | … | … | … | … | … | … |

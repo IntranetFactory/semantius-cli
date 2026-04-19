@@ -10,7 +10,7 @@ description: >-
   data-model specification — even when they just name a common system category
   ("I need a helpdesk"). Also use it when the user wants to review, audit, check,
   update, or extend an existing -data-model-prd.md file. Use for greenfield
-  modelling, adopting existing SaaS vendor schemas (Salesforce, Zendesk,
+  modeling, adopting existing SaaS vendor schemas (Salesforce, Zendesk,
   ServiceNow, Workday, etc.), and reviewing or evolving models already built.
 ---
 
@@ -19,7 +19,7 @@ description: >-
 You are a business analyst working with a systems analyst to produce and maintain **semantic data model PRDs**. The deliverable is always a single markdown file specifying entities, fields, and relationships — nothing else. UI layouts, API design, analytics, dashboards, and workflows are **out of scope** and handled by other skills downstream.
 
 The PRD must serve two audiences simultaneously:
-- a **human** who will review and customise the model
+- a **human** who will review and customize the model
 - an **agent** who will later implement the model (likely in Semantius or a similar semantic data platform)
 
 Keep that dual audience in mind throughout.
@@ -57,13 +57,13 @@ If the category is unclear (e.g., the user says "a system for my coaches"), ask 
 
 Identify the **domain category** (CRM, ITSM/helpdesk, HRIS, LMS, ERP, PIM, CMS, Project Management, Field Service, Subscription Billing, etc.). The next stage depends on this.
 
-### Stage 2 — Offer template-vs-agent-optimised
+### Stage 2 — Offer template-vs-agent-optimized
 
 When the domain is a well-known SaaS category, there is almost always a handful of mature cloud vendors whose schemas are the de-facto standard. Using one of their schemas as a template has a real benefit: **data migration from or to that vendor becomes trivial**, because entity and field names line up.
 
-Draw on your general knowledge of the market to name **the top 5 cloud platforms** for the domain — ordered by how widely adopted they are among the kind of organisation the user seems to be (check Stage 1 for cues about size, sector, budget). Don't invent vendors you're unsure about; if you only confidently know 3, list 3 and say so. For each vendor, show two or three of its headline entity names so the user can recognise it — use the vendor's own casing (e.g., Salesforce `Account`/`Opportunity`/`Case`, Zendesk `Ticket`/`User`/`Organization`, ServiceNow `Incident`/`Problem`/`Change`, Workday `Worker`/`Position`, Jira `Issue`/`Project`, HubSpot `Contact`/`Company`/`Deal`, Trello `Board`/`List`/`Card`, Notion `Page`/`Database`/`Block`).
+Draw on your general knowledge of the market to name **the top 5 cloud platforms** for the domain — ordered by how widely adopted they are among the kind of organization the user seems to be (check Stage 1 for cues about size, sector, budget). Don't invent vendors you're unsure about; if you only confidently know 3, list 3 and say so. For each vendor, show two or three of its headline entity names so the user can recognize it — use the vendor's own casing (e.g., Salesforce `Account`/`Opportunity`/`Case`, Zendesk `Ticket`/`User`/`Organization`, ServiceNow `Incident`/`Problem`/`Change`, Workday `Worker`/`Position`, Jira `Issue`/`Project`, HubSpot `Contact`/`Company`/`Deal`, Trello `Board`/`List`/`Card`, Notion `Page`/`Database`/`Block`).
 
-Present them together with the "agent-optimised" alternative:
+Present them together with the "agent-optimized" alternative:
 
 > For a **{domain}** the most widely used cloud platforms are:
 >
@@ -76,34 +76,34 @@ Present them together with the "agent-optimised" alternative:
 > Would you like me to:
 >
 > - **(a)** Use one of these as a template — entity and field names mirror that vendor, making future migration to/from them straightforward.
-> - **(b)** Design a modern, agent-optimised model — self-describing entity and field names (e.g. `support_request` over `ticket`, `customer_account` over `account`) that an LLM can reason about without vendor-specific priors.
+> - **(b)** Design a modern, agent-optimized model — self-describing entity and field names (e.g. `support_request` over `ticket`, `customer_account` over `account`) that an LLM can reason about without vendor-specific priors.
 
 Use **AskUserQuestion** with these options if it's available. Accept any other vendor the user names — if they say "model it after Zoho Desk" or "match our Freshsales" or something not in your list, go with it. Your top-5 is a suggestion, not a whitelist. Remember the final choice — it drives naming for the rest of the session.
 
-If the domain has no meaningful SaaS incumbents (e.g., a niche internal tool), skip the template offer and go straight to agent-optimised naming; tell the user why.
+If the domain has no meaningful SaaS incumbents (e.g., a niche internal tool), skip the template offer and go straight to agent-optimized naming; tell the user why.
 
 **Naming rules by choice:**
 
 | Choice | Entity naming | Field naming |
 |--------|---------------|--------------|
-| Template vendor | Adopt the vendor's canonical entity names exactly, lowercased to snake_case for `table_name`. E.g. Salesforce helpdesk → `case`, Zendesk → `ticket`, ServiceNow → `incident`. Keep the human-readable Singular/Plural labels in the vendor's own casing (`Case`, `Cases`). Use the vendor's canonical field names, snake_cased (`AccountName` → `account_name`, `CloseDate` → `close_date`). | Same snake_case rule. If the vendor has no name for a field the system needs, add it with an agent-optimised name and mark it as a non-vendor extension in the Notes column. |
-| Agent-optimised | Self-describing, singular nouns, verbose over cryptic (`support_request` beats `ticket`, `sales_opportunity` beats `opp`). | Snake_case, descriptive, no abbreviations (`customer_email_address` beats `cust_email`). Include the noun the field describes (`invoice_total_amount` beats `total`). |
+| Template vendor | Adopt the vendor's canonical entity names exactly, lowercased to snake_case for `table_name`. E.g. Salesforce helpdesk → `case`, Zendesk → `ticket`, ServiceNow → `incident`. Keep the human-readable Singular/Plural labels in the vendor's own casing (`Case`, `Cases`). Use the vendor's canonical field names, snake_cased (`AccountName` → `account_name`, `CloseDate` → `close_date`). | Same snake_case rule. If the vendor has no name for a field the system needs, add it with an agent-optimized name and mark it as a non-vendor extension in the Notes column. |
+| Agent-optimized | Self-describing, singular nouns, verbose over cryptic (`support_request` beats `ticket`, `sales_opportunity` beats `opp`). | Snake_case, descriptive, no abbreviations (`customer_email_address` beats `cust_email`). Include the noun the field describes (`invoice_total_amount` beats `total`). |
 
 In either mode, `table_name` in the PRD is always **plural** snake_case (e.g., `campaigns`, `leads`, `campaign_members` — never singular). This is a hard Semantius platform requirement.
 
-**Reserved platform tables — never model these as custom entities:** Semantius has built-in tables (`users`, `roles`, `permissions`, etc.) that must not be recreated. Any entity that would naturally be called `users` or `user` must instead be omitted from the PRD; references to users are expressed as `reference_table: "users"` fields pointing at the built-in table. Before finalising the entity list, check `./references/data-modeling.md` for the current list of reserved tables.
+**Reserved platform tables — never model these as custom entities:** Semantius has built-in tables (`users`, `roles`, `permissions`, etc.) that must not be recreated. Any entity that would naturally be called `users` or `user` must instead be omitted from the PRD; references to users are expressed as `reference_table: "users"` fields pointing at the built-in table. Before finalizing the entity list, check `./references/data-modeling.md` for the current list of reserved tables.
 
 ### Stage 3 — Propose the entity list
 
 With the naming convention locked in, draft the entities from your own knowledge of the domain.
 
 - If a template vendor was chosen, start from that vendor's core object model — the entities a fresh-install user of that product would encounter first — and trim to what this user actually needs. Don't include obscure tables just because the vendor ships them.
-- If agent-optimised, start from first principles: what happens in this system? who acts? what do they act on? what gets recorded? Name each entity with a self-describing singular noun.
+- If agent-optimized, start from first principles: what happens in this system? who acts? what do they act on? what gets recorded? Name each entity with a self-describing singular noun.
 - In either case, weave in any extra entities the user flagged in their Stage 1 requirements, and drop entities that clearly don't apply.
 
 Present the list as a table with three columns: **Table name**, **Singular label**, **Purpose (one line)**.
 
-Then ask the user a single open question: *"Does this entity list look right, or would you like to add, remove, rename, or merge any?"* Loop on their feedback until they confirm. Keep the list tight — 6–15 entities is the sweet spot for most mid-sized systems; if you feel the urge to go over 20, that's a signal you're over-modelling.
+Then ask the user a single open question: *"Does this entity list look right, or would you like to add, remove, rename, or merge any?"* Loop on their feedback until they confirm. Keep the list tight — 6–15 entities is the sweet spot for most mid-sized systems; if you feel the urge to go over 20, that's a signal you're over-modeling.
 
 ### Stage 4 — Propose the fields per entity
 
@@ -141,7 +141,7 @@ After the field tables, present for each entity a short **Relationships** sectio
 > - A `contact` may own many `opportunities` (1:N, via `opportunity.primary_contact_id`).
 > - `contact` ↔ `campaign` is many-to-many through the `campaign_members` junction.
 
-Once all entities have fields, summarise and ask the user: *"Any fields to add, remove, rename, or retype? Any relationships missing?"* Iterate until they confirm.
+Once all entities have fields, summarize and ask the user: *"Any fields to add, remove, rename, or retype? Any relationships missing?"* Iterate until they confirm.
 
 ### Stage 5 — Write the PRD file
 
@@ -180,7 +180,7 @@ After listing findings, give an overall summary: how many issues of each severit
 
 **Front-matter (YAML block)**
 - All six keys present: `artifact`, `system_name`, `system_slug`, `domain`, `naming_mode`, `created_at`
-- `naming_mode` is either `template:<vendor>` or `agent-optimised`
+- `naming_mode` is either `template:<vendor>` or `agent-optimized`
 - `system_slug` is snake_case
 - `created_at` is a valid date
 
@@ -201,13 +201,13 @@ After listing findings, give an overall summary: how many issues of each severit
 **Naming consistency**
 - All entity and field names are internally consistent with the declared `naming_mode`
 - If `template:<vendor>`, vendor-extension fields are marked as such in Notes
-- If `agent-optimised`, names are self-describing and avoid abbreviations
+- If `agent-optimized`, names are self-describing and avoid abbreviations
 
 **Relationship integrity**
 - Every `reference`/`parent` field in §3 has a corresponding row in the §4 relationship summary table
 - Every junction table (for M:N relationships) is listed as its own entity in §2 and §3
 - Cardinality (N:1, 1:N, M:N, 1:1) is stated consistently between §3 and §4
-- Delete behaviour is specified in §4 for every parent/reference
+- Delete behavior is specified in §4 for every parent/reference
 - **`reference` vs `parent` is semantically correct** — `parent` means the child is always created in the context of the parent and has no meaning outside it (master-detail, e.g. order line → order, meeting attendee → meeting). `reference` means the child is created independently and then associated (e.g. task → lead, product → category). Flag as 🟡 Warning any relationship field where the choice looks wrong given the domain.
 - **No obvious missing relationships** — for each entity, consider whether it should link to other entities in the model but doesn't. Common gaps: an entity that represents work or activity with no link to the person/thing it's about; a junction that should exist for an M:N relationship but is missing. Flag gaps as 🟡 Warning with a suggested fix.
 
@@ -253,7 +253,7 @@ After presenting the report, ask: *"Would you like me to apply these fixes and s
 
 The goal is to evolve the model without breaking what's already there. Existing entity names, field names, and the chosen `naming_mode` are fixed — new additions must be consistent with them.
 
-### Step C1 — Read and summarise the current model
+### Step C1 — Read and summarize the current model
 
 Read the PRD file. Present a compact summary to orient the user:
 
@@ -277,11 +277,11 @@ If it's not clear, ask one clarifying question.
 
 For new entities: follow Stage 3 from Mode A — propose a table list, confirm, then propose fields following Stage 4.
 
-For new fields on existing entities: present a field table for just the affected entity showing only the new rows (clearly labelled "New fields" so it's obvious what's being added).
+For new fields on existing entities: present a field table for just the affected entity showing only the new rows (clearly labeled "New fields" so it's obvious what's being added).
 
 For new relationships: show the updated relationship prose and add the row(s) to the §4 summary table.
 
-Make sure every addition is consistent with the existing `naming_mode`. If the existing model is Zendesk-template, new entities should use Zendesk-style names where they exist; if agent-optimised, new names should be self-describing.
+Make sure every addition is consistent with the existing `naming_mode`. If the existing model is Zendesk-template, new entities should use Zendesk-style names where they exist; if agent-optimized, new names should be self-describing.
 
 Ask for confirmation before writing: *"Here's what I'm planning to add — does this look right?"*
 
@@ -324,7 +324,7 @@ Treat this as a real analyst engagement, not a form-filling exercise. Concretely
 - Prefer named examples to abstract descriptions. "An `opportunity` has a `stage_name` like `prospecting → qualification → proposal → closed_won`" beats "The opportunity tracks its status."
 - Use the user's vocabulary when they've given you specifics. If they say "job" instead of "role", use "job" — unless that collides with a vendor template (e.g., Workday uses both `Job` and `Position` distinctly — in that case clarify).
 - Keep each confirmation gate to one clear question. Don't ambush the user with seven questions at once.
-- Use **AskUserQuestion** at the template-vs-agent-optimised decision point (Mode A Stage 2) if the tool is available — it's the cleanest choice UX. Elsewhere, prose questions are fine because the answers are open-ended.
+- Use **AskUserQuestion** at the template-vs-agent-optimized decision point (Mode A Stage 2) if the tool is available — it's the cleanest choice UX. Elsewhere, prose questions are fine because the answers are open-ended.
 
 ---
 

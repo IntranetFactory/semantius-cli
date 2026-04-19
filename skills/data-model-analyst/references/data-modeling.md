@@ -5,7 +5,7 @@ This is **Layer 1** of Semantius — the semantic data model that defines the sc
 Unlike raw database DDL, the semantic model encodes:
 - Human-readable labels and descriptions (used by auto-generated UIs)
 - UI rendering hints (field order, width, icons)
-- Reference relationships with configurable delete behaviour
+- Reference relationships with configurable delete behavior
 - Role-based access control (RBAC) per entity
 
 The typed crud tools (`create_entity`, `create_field`, etc.) all operate on this layer. To work with actual business records once the schema is defined, use `postgrestRequest` (see `references/crud-tools.md`).
