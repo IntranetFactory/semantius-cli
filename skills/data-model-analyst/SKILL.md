@@ -35,10 +35,13 @@ Before doing anything else, figure out which of these three modes applies:
 | **Create** | User wants a brand-new PRD. No existing file. |
 | **Audit** | User has an existing `*-data-model-prd.md` and wants it checked for quality, completeness, or correctness. |
 | **Extend** | User has an existing PRD and wants to add entities, fields, or relationships to it. |
+| **Customize** | User says "customize" (or similar — "tweak", "adapt", "tailor") without saying *what* to change. Treat this as: load → **show a brief overview (§1 summary + the §2 entity table)** → ask the user which entities, fields, or relationships they want to customize → then route into Extend or targeted edits. Do **not** run a full audit up front and do **not** guess at changes — the overview is the orientation, the user drives the rest. |
 
-If the user uploaded or referenced a PRD file, you're in Audit or Extend mode — ask which one if it's not obvious from context. If there's no existing file, you're in Create mode.
+If the user uploaded or referenced a PRD file, you're in Audit, Extend, or Customize mode — ask which one if it's not obvious from context. If there's no existing file, you're in Create mode.
 
-When in Audit or Extend mode, read the PRD file before doing anything else. If the user hasn't told you the path, ask for it (or look in the workspace folder for `*-data-model-prd.md` files).
+When in Audit, Extend, or Customize mode, read the PRD file before doing anything else. If the user hasn't told you the path, ask for it (or look in the workspace folder for `*-data-model-prd.md` files).
+
+> **🛑 Fetching remote PRDs — use `curl`, not WebFetch.** If the PRD is at an `http(s)` URL, fetch the raw bytes via Bash (`curl -s <url>`) and read the full output. **Never use WebFetch for a PRD.** WebFetch runs the content through an HTML→markdown summarization pass that silently strips YAML front-matter and can alter structural details. Auditing the WebFetch output will produce false blocker findings (most commonly "front-matter missing" when it is actually present) and erode user trust. This rule applies in every mode.
 
 ---
 
