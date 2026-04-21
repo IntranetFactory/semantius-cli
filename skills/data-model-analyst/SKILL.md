@@ -4,14 +4,23 @@ description: >-
   Acts as a business-analyst-and-systems-analyst pair to produce and maintain
   semantic data model PRDs — markdown specs that list entities, fields (name,
   type, required, label), and relationships, deliberately excluding UI, API, and
-  analytics concerns. Use this skill whenever the user wants to design a data
-  model, build a system like X, spec out a CRM/ITSM/HRIS/LMS/ERP/PIM/CMS, write
-  a PRD for a system, model a domain, define entities and fields, or asks for a
-  data-model specification — even when they just name a common system category
-  ("I need a helpdesk"). Also use it when the user wants to review, audit, check,
-  update, or extend an existing -data-model-prd.md file. Use for greenfield
-  modeling, adopting existing SaaS vendor schemas (Salesforce, Zendesk,
-  ServiceNow, Workday, etc.), and reviewing or evolving models already built.
+  analytics concerns. **Trigger whenever the user expresses a need for any kind
+  of business system or data-backed tool**, regardless of how they phrase it —
+  this includes: "design a data model for X", "build a system like X", "spec
+  out a CRM/ITSM/HRIS/LMS/ERP/PIM/CMS/PM/field service/billing/CMS", "write
+  a PRD for X", "model a domain", "define entities and fields", "I need a
+  helpdesk / CRM / HR system / applicant tracker / roadmap tool / ticketing
+  system / inventory system / etc.", "I need a tool to {track | plan | manage
+  | organize | record | capture} {anything business-related}", "I need
+  something to handle X", "help me build a system / app / tool for X", "I want
+  to track X in a structured way". Do NOT answer such requests by recommending
+  off-the-shelf SaaS products or asking whether they'd prefer to buy vs build —
+  invoke this skill and produce a PRD. Also use this skill when the user wants
+  to review, audit, check, update, customize, or extend an existing
+  `*-data-model-prd.md` file. Use for greenfield modeling, adopting existing
+  SaaS vendor schemas (Salesforce, Zendesk, ServiceNow, Workday, HubSpot,
+  Jira, Linear, Productboard, etc.), and reviewing or evolving models already
+  built.
 ---
 
 # Data Model Analyst
@@ -51,6 +60,8 @@ Follow these five stages in order. Do not skip ahead — each stage produces inp
 
 ### Stage 1 — Capture the system
 
+> **🛑 The deliverable is always a data-model PRD.** Once this skill is invoked, your job is to produce a `*-data-model-prd.md` file — full stop. Do **not** propose alternatives to modelling: no off-the-shelf SaaS products, no "just use a spreadsheet / Markdown checklist", no "keep it simple and skip the model". The user has already decided they want a data model; treat that as settled and move on to Stage 1. Stage 2's vendor-template question is the **only** place vendor names appear in the flow, and even there it's about *schema naming*, not about recommending the user buy that product. If the user explicitly asks whether they should use a SaaS product instead, answer briefly and then return to the PRD track — evaluating external products is a different skill.
+
 Ask the user what system they want to model. Two shapes are common:
 
 1. **Named category only** — "I need a CRM", "a helpdesk", "an HRIS", "an LMS". The user has no detailed requirements and expects you to bring the domain knowledge.
@@ -59,6 +70,8 @@ Ask the user what system they want to model. Two shapes are common:
 If the category is unclear (e.g., the user says "a system for my coaches"), ask one clarifying question to narrow it down. Otherwise proceed.
 
 Identify the **domain category** (CRM, ITSM/helpdesk, HRIS, LMS, ERP, PIM, CMS, Project Management, Field Service, Subscription Billing, etc.). The next stage depends on this.
+
+**Capture the initial request verbatim.** Record the user's opening ask (e.g. *"I need a basic lead tracker"*, *"spec out an HRIS for a 200-person company"*) exactly as they said it — no rewording, no tidying. This goes into the `initial_request` front-matter key in Stage 5 and is **never** modified afterwards; it's the historical record of what kicked the PRD off. If the user started with several messages before committing to a system, use the first message that clearly names the system they want. If a clarifying question in this stage changed the category, still keep the original wording — don't fold the clarification into it.
 
 ### Stage 2 — Offer legacy-vendor compatibility vs agent-optimized
 
@@ -117,11 +130,32 @@ With the naming convention locked in, draft the entities from your own knowledge
 - If agent-optimized, start from first principles: what happens in this system? who acts? what do they act on? what gets recorded? Name each entity with a self-describing singular noun.
 - In either case, weave in any extra entities the user flagged in their Stage 1 requirements, and drop entities that clearly don't apply.
 
-Present the list as a table with three columns: **Table name**, **Singular label**, **Purpose (one line)**.
+> **🛑 Template mode: name the vendor object each entity maps to.** When `naming_mode` is `template:<vendor>`, every proposed entity **must** explicitly cite the vendor object it mirrors — in a fourth column "Vendor object". This forces you to check your own confidence. If you can't name a specific vendor object with high confidence, you don't actually know the vendor's schema well enough to claim template-fidelity — say so in one sentence and offer the user either (a) switch to agent-optimized, (b) let them paste the vendor's object list, or (c) proceed but mark the entity as "inspired-by, not canonical".
+>
+> **Watch for domain ambiguity traps.** Some concepts are modelled very differently across vendors and editions:
+> - **"Lead"** — Salesforce has a dedicated `Lead` object that converts to Contact+Account+Opportunity. HubSpot (since 2023) has a dedicated `Lead` object (FQN `LEAD`, 0-136) separate from `Contact`; older HubSpot accounts treated a lead as a `Contact` with `lifecycle_stage=lead`. Pipedrive has `Lead` separate from `Person`. Zendesk Sell has `Lead` separate from `Contact`.
+> - **"Ticket" vs "Case" vs "Incident"** — Zendesk uses `Ticket`, Salesforce Service Cloud uses `Case`, ServiceNow uses `Incident`/`Problem`/`Change` as distinct objects, Jira Service Management uses `Issue` of a specific type.
+> - **"Opportunity" vs "Deal"** — Salesforce/MS Dynamics use `Opportunity`; HubSpot/Pipedrive use `Deal`.
+>
+> When the user's ask sits on one of these ambiguity lines (a lead manager, a helpdesk, a deal/opportunity tracker), **state which vendor object you're picking and why before proposing the entity list**, so the user can correct a wrong pick before a dozen fields are built on top of it.
+
+Present the list as a table with **Table name**, **Singular label**, **Purpose (one line)**, and — in template mode only — a **Vendor object** column showing the exact vendor object name (e.g., `HubSpot Lead (0-136)`, `Salesforce Contact`, `Zendesk Ticket`).
 
 Then ask the user a single open question: *"Does this entity list look right, or would you like to add, remove, rename, or merge any?"* Loop on their feedback until they confirm. Keep the list tight — 6–15 entities is the sweet spot for most mid-sized systems; if you feel the urge to go over 20, that's a signal you're over-modeling.
 
 ### Stage 4 — Propose the fields per entity
+
+> **🛑 Template mode: do not fabricate "canonical" vendor field names.** When `naming_mode` is `template:<vendor>`, a field marked as vendor-canonical means *this is literally what the vendor calls it*. Do not invent plausible-sounding CRM/ITSM/HRIS field names and label them as the vendor's own — that looks like template-fidelity but is actually a lie, and it breaks the primary benefit of template mode (data migration parity).
+>
+> **Canonical is the default — only annotate exceptions.** The `naming_mode` already declares the template; repeating "Salesforce X" on every row is noise. Leave the Notes column **blank** for plain-canonical fields. Only annotate when a field falls into one of these exceptions:
+>
+> - **Uncertain canonical name** — you suspect the vendor has a field for this concept but can't cite the exact name. **Do not guess.** Either ask the user, or mark it `*uncertain — verify against vendor docs*`.
+> - **Non-vendor extension** — a field the user needs that the vendor doesn't ship. Use an agent-optimized name and mark it `non-vendor extension`.
+> - **Meaningful divergence from vendor shape** — you're modelling the field differently from how the vendor ships it (e.g. Salesforce has a computed `Name`, we store a flat string; Salesforce uses an 18-char ID, we use UUID). Briefly note the divergence — this is the *only* reason to mention the vendor by name in the Notes column.
+>
+> Standard column uses — `unique`, `→ accounts (N:1)`, `values: a, b, c` — remain as before, alongside any exception annotation.
+>
+> If you find you can only confidently produce a handful of canonical fields per entity, that's the signal to be honest with the user: *"My knowledge of {vendor}'s field-level schema is shallow — here's what I'm sure about, here's what I'd need you to confirm."* Better to expose uncertainty than to produce a confidently-wrong model.
 
 For each confirmed entity, draft a field list. Present each entity as its own table with these columns:
 
@@ -163,6 +197,8 @@ Once all entities have fields, summarize and ask the user: *"Any fields to add, 
 
 Use the template in `references/prd-template.md` — it has the exact section order, front-matter block, and rendering conventions that work for both human review and agent ingestion. Keep the PRD self-contained (a downstream agent should not need any prior conversation to implement the model).
 
+**Set `initial_request` in the front-matter** to the verbatim user opening captured in Stage 1. Use a YAML literal block (`|`) so newlines, quotes, and punctuation survive unchanged. This value is immutable from this point on — future audits and extensions must preserve it exactly.
+
 **Before saving, run a self-audit pass on the draft.** Work through every 🔴 Blocker check from the Audit checklist (Mode B) and fix any issues in the draft before writing the file. Do not save a PRD that would fail its own audit. Warnings and suggestions may be noted in §6 open questions rather than blocking the save.
 
 Save the final PRD to the workspace folder as `{system_slug}-data-model-prd.md` where `{system_slug}` is snake_case (e.g., `acme_crm`, `helpdesk`, `fieldforce_lms`).
@@ -174,6 +210,8 @@ When you share the file back, use a single `computer://` link and a one-sentence
 ## Mode B — Audit (review an existing PRD)
 
 The goal is to give the user a clear, actionable quality report — not just a list of problems, but an explanation of why each issue matters and a suggested fix. Think of it as a peer-review from a senior analyst.
+
+> **🔒 `initial_request` is immutable.** If the PRD's front-matter contains an `initial_request` key, preserve its value byte-for-byte in any fix-up write. Never rewrite, summarise, "clean up", or re-quote it — even if the wording is scrappy or the scope has since grown beyond it. It's a historical record of what the user originally asked for, not a live scope statement.
 
 ### How to run the audit
 
@@ -195,10 +233,11 @@ After listing findings, give an overall summary: how many issues of each severit
 - Check the reference file for any other reserved table names or constraints added since this skill was written
 
 **Front-matter (YAML block)**
-- All six keys present: `artifact`, `system_name`, `system_slug`, `domain`, `naming_mode`, `created_at`
+- All seven keys present: `artifact`, `system_name`, `system_slug`, `domain`, `naming_mode`, `created_at`, `initial_request`
 - `naming_mode` is either `template:<vendor>` or `agent-optimized`
 - `system_slug` is snake_case
 - `created_at` is a valid date
+- `initial_request` is a non-empty string (YAML literal block preferred) — **do not evaluate the wording or suggest rewording it**; this field is an immutable historical record of the user's opening ask. A PRD missing this key predates the rule; flag as 🟡 Warning, not 🔴 Blocker, and only backfill if the user explicitly asks.
 
 **Document structure**
 - All seven sections present (§1 Overview through §7 Implementation notes)
@@ -268,6 +307,8 @@ After presenting the report, ask: *"Would you like me to apply these fixes and s
 ## Mode C — Extend (add to an existing PRD)
 
 The goal is to evolve the model without breaking what's already there. Existing entity names, field names, and the chosen `naming_mode` are fixed — new additions must be consistent with them.
+
+> **🔒 `initial_request` is immutable.** When you rewrite the file in Step C4, copy the `initial_request` front-matter value over unchanged. The scope has almost certainly grown beyond what the user first asked for — that's fine, the field is the historical opening ask, not a running scope. Do not update it, expand it, or merge the new extension request into it.
 
 ### Step C1 — Read and summarize the current model
 

@@ -14,6 +14,8 @@ system_slug: {{system_slug}}
 domain: {{CRM | ITSM | HRIS | LMS | ERP | PIM | Project Management | Field Service | Subscription Billing | CMS | custom}}
 naming_mode: {{template:<vendor> | agent-optimized}}
 created_at: {{YYYY-MM-DD}}
+initial_request: |
+  {{Verbatim user request that kicked off this PRD — e.g. "I need a basic lead tracker". Captured once at creation and NEVER modified by later audits or extensions.}}
 ---
 
 # {{System display name}} — Data Model PRD
@@ -103,4 +105,5 @@ A short checklist for the agent who will materialise this model in Semantius (or
 - If a field is a reference, always put the arrow + target + cardinality in the "Reference / Notes" column, e.g. `→ accounts (N:1)`. If it's a parent (ownership), use `↳ accounts (N:1, cascade)` so the distinction is visible.
 - Keep the "Open questions" section even when empty. Downstream agents use its presence to decide whether to escalate before implementation.
 - The front-matter is YAML — every value must be quoted if it contains a colon.
+- `initial_request` is **immutable**. It captures the user's verbatim opening ask from the Create session. Audit and Extend modes must preserve it exactly — never rewrite, summarise, tidy, or "improve" it, even if the wording is rough or the scope has since expanded. It's a historical record of the original intent, not a live scope statement. Use a YAML literal block (`|`) so newlines and punctuation survive round-trips.
 - If the system has no enums, §5 can read "No enumerations defined." — don't omit the section; keeping section numbers stable helps humans navigate multiple PRDs.
