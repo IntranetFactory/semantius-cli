@@ -341,7 +341,7 @@ Refer to `semantius-cli/references/data-modeling.md` for the exact CLI syntax fo
 - 🔒 Built-in → skip entirely. Do not `create_entity` for `users`, `roles`, etc.
 - ♻️ Same-module match → skip `create_entity`; fall through to 4d (field diff).
 - ✨ New → `create_entity`. After creation, correct the `label_column` field title if needed with `update_field`.
-- 🛑 Resolved as **merge** → skip `create_entity`. The target is the existing entity in the other module. Record the mapping; the merge is realised in 4d by adding the non-overlapping fields additively to the existing entity.
+- 🛑 Resolved as **merge** → skip `create_entity`. The target is the existing entity in the other module. Record the mapping; the merge is realized in 4d by adding the non-overlapping fields additively to the existing entity.
 - 🛑 Resolved as **rename incoming** → `create_entity` using the new name. (Plan-level rewrite of `reference_table` values has already happened before this stage.)
 - 🛑 Resolved as **rename existing** → attempt `update_entity` on the existing entity's `table_name` first, before any new creates. If the platform rejects the rename, stop and return to Stage 3 — never continue silently. Once the rename succeeds, Semantius repoints every catalog-side `reference_table` automatically; no follow-up `update_field` pass is needed.
 - 🛑 Resolved as **rename both** → do the existing-rename first, then `create_entity` for the incoming under its new name.
@@ -395,7 +395,7 @@ After verification, ask:
 | 🔒 Built-in `users` | ⚠️ Off by default — allowed only after explicit confirmed override (see below) |
 | 🔒 Other Semantius built-ins (`roles`, `permissions`, `permission_hierarchy`, `role_permissions`, `user_roles`, `webhook_receivers`, `webhook_receiver_logs`, `modules`, `entities`, `fields`) | ❌ **Never, under any circumstances** — no override |
 
-**Sample `users` — off by default, confirmed override allowed.** `users` is platform infrastructure — it controls authentication. Fake users cannot log in (no password, no real IdP identity), cannot receive meaningful role assignments, and will pollute audit trails. **Default behaviour: decline and explain these limitations.** If after that explanation the user still wants sample users and explicitly confirms they understand the generated users cannot log in, you may proceed. When you do:
+**Sample `users` — off by default, confirmed override allowed.** `users` is platform infrastructure — it controls authentication. Fake users cannot log in (no password, no real IdP identity), cannot receive meaningful role assignments, and will pollute audit trails. **Default behavior: decline and explain these limitations.** If after that explanation the user still wants sample users and explicitly confirms they understand the generated users cannot log in, you may proceed. When you do:
 
 - Use clearly-synthetic identifiers: `email: "sample1@example.invalid"` (the `.invalid` TLD is reserved exactly for this), `full_name: "Sample User 1"`, etc.
 - If the model has a `status` / `is_active` / similar field on users, seed to an inactive/test value so the rows can't be mistaken for real accounts.
@@ -489,7 +489,7 @@ Run the complete script in one bash call and report the final output summary.
 | Extra fields/entities not in model | None | Leave them alone |
 | Model declares a built-in (`users`, `roles`, …) | None | Dedup: skip create, reuse built-in as `reference_table` target; never replace |
 | Model declares extra fields on a built-in | ⚠️ Medium | Offer additive `create_field` with `is_nullable: true`; never modify existing built-in fields |
-| **Cross-module exact-name collision** (entity with same `table_name` exists in another module) | 🛑 High — ambiguity gate | Stage 3 decision dialogue: merge / rename incoming / rename existing / rename both / abort. Never silently coexist. |
-| **Similar-name collision** (root, synonym, qualifier, prefix/suffix) | 🛑 High — ambiguity gate | Same dialogue as above. User may decline, in which case record the decision and proceed. |
+| **Cross-module exact-name collision** (entity with same `table_name` exists in another module) | 🛑 High — ambiguity gate | Stage 3 decision dialog: merge / rename incoming / rename existing / rename both / abort. Never silently coexist. |
+| **Similar-name collision** (root, synonym, qualifier, prefix/suffix) | 🛑 High — ambiguity gate | Same dialog as above. User may decline, in which case record the decision and proceed. |
 | Merge requires changing an immutable field format | 🛑 High | Merge is impossible — fall back to a rename option. |
 | Existing-entity rename rejected by platform | 🛑 High | Stop. Offer "rename incoming" or "rename both" as fallback. Never continue silently. |

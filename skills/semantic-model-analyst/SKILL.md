@@ -62,7 +62,7 @@ Follow these five stages in order. Do not skip ahead — each stage produces inp
 
 ### Stage 1 — Capture the system
 
-> **🛑 The deliverable is always a semantic-model markdown file.** Once this skill is invoked, your job is to produce a `*-semantic-model.md` file — full stop. Do **not** propose alternatives to modelling: no off-the-shelf SaaS products, no "just use a spreadsheet / Markdown checklist", no "keep it simple and skip the model". The user has already decided they want a data model; treat that as settled and move on to Stage 1. Stage 2's vendor-template question is the **only** place vendor names appear in the flow, and even there it's about *schema naming*, not about recommending the user buy that product. If the user explicitly asks whether they should use a SaaS product instead, answer briefly and then return to the modelling track — evaluating external products is a different skill.
+> **🛑 The deliverable is always a semantic-model markdown file.** Once this skill is invoked, your job is to produce a `*-semantic-model.md` file — full stop. Do **not** propose alternatives to modeling: no off-the-shelf SaaS products, no "just use a spreadsheet / Markdown checklist", no "keep it simple and skip the model". The user has already decided they want a data model; treat that as settled and move on to Stage 1. Stage 2's vendor-template question is the **only** place vendor names appear in the flow, and even there it's about *schema naming*, not about recommending the user buy that product. If the user explicitly asks whether they should use a SaaS product instead, answer briefly and then return to the modeling track — evaluating external products is a different skill.
 
 Ask the user what system they want to model. Two shapes are common:
 
@@ -134,7 +134,7 @@ With the naming convention locked in, draft the entities from your own knowledge
 
 > **🛑 Template mode: name the vendor object each entity maps to.** When `naming_mode` is `template:<vendor>`, every proposed entity **must** explicitly cite the vendor object it mirrors — in a fourth column "Vendor object". This forces you to check your own confidence. If you can't name a specific vendor object with high confidence, you don't actually know the vendor's schema well enough to claim template-fidelity — say so in one sentence and offer the user either (a) switch to agent-optimized, (b) let them paste the vendor's object list, or (c) proceed but mark the entity as "inspired-by, not canonical".
 >
-> **Watch for domain ambiguity traps.** Some concepts are modelled very differently across vendors and editions:
+> **Watch for domain ambiguity traps.** Some concepts are modeled very differently across vendors and editions:
 > - **"Lead"** — Salesforce has a dedicated `Lead` object that converts to Contact+Account+Opportunity. HubSpot (since 2023) has a dedicated `Lead` object (FQN `LEAD`, 0-136) separate from `Contact`; older HubSpot accounts treated a lead as a `Contact` with `lifecycle_stage=lead`. Pipedrive has `Lead` separate from `Person`. Zendesk Sell has `Lead` separate from `Contact`.
 > - **"Ticket" vs "Case" vs "Incident"** — Zendesk uses `Ticket`, Salesforce Service Cloud uses `Case`, ServiceNow uses `Incident`/`Problem`/`Change` as distinct objects, Jira Service Management uses `Issue` of a specific type.
 > - **"Opportunity" vs "Deal"** — Salesforce/MS Dynamics use `Opportunity`; HubSpot/Pipedrive use `Deal`.
@@ -153,7 +153,7 @@ Then ask the user a single open question: *"Does this entity list look right, or
 >
 > - **Uncertain canonical name** — you suspect the vendor has a field for this concept but can't cite the exact name. **Do not guess.** Either ask the user, or mark it `*uncertain — verify against vendor docs*`.
 > - **Non-vendor extension** — a field the user needs that the vendor doesn't ship. Use an agent-optimized name and mark it `non-vendor extension`.
-> - **Meaningful divergence from vendor shape** — you're modelling the field differently from how the vendor ships it (e.g. Salesforce has a computed `Name`, we store a flat string; Salesforce uses an 18-char ID, we use UUID). Briefly note the divergence — this is the *only* reason to mention the vendor by name in the Notes column.
+> - **Meaningful divergence from vendor shape** — you're modeling the field differently from how the vendor ships it (e.g. Salesforce has a computed `Name`, we store a flat string; Salesforce uses an 18-char ID, we use UUID). Briefly note the divergence — this is the *only* reason to mention the vendor by name in the Notes column.
 >
 > Standard column uses — `unique`, `→ accounts (N:1)`, `values: a, b, c` — remain as before, alongside any exception annotation.
 >
@@ -234,7 +234,7 @@ When you share the file back, use a single `computer://` link and a one-sentence
 
 The goal is to give the user a clear, actionable quality report — not just a list of problems, but an explanation of why each issue matters and a suggested fix. Think of it as a peer-review from a senior analyst.
 
-> **🔒 `initial_request` is immutable.** If the file's front-matter contains an `initial_request` key, preserve its value byte-for-byte in any fix-up write. Never rewrite, summarise, "clean up", or re-quote it — even if the wording is scrappy or the scope has since grown beyond it. It's a historical record of what the user originally asked for, not a live scope statement.
+> **🔒 `initial_request` is immutable.** If the file's front-matter contains an `initial_request` key, preserve its value byte-for-byte in any fix-up write. Never rewrite, summarize, "clean up", or re-quote it — even if the wording is scrappy or the scope has since grown beyond it. It's a historical record of what the user originally asked for, not a live scope statement.
 
 ### How to run the audit
 
@@ -279,6 +279,7 @@ After listing findings, give an overall summary: how many issues of each severit
 - Edge labels, where present, are short verb phrases using the `-->|verb|` or `---|verb|` syntax (`"has"`, `"belongs to"`, `"assigned to"`); unlabeled edges are allowed but 🟡 Warning when the relationship is non-obvious
 
 **Entity health (for each entity in §3)**
+- 🔴 **`singular_label` and `plural_label` are grammatically symmetric.** `singularize(plural_label)` must equal `singular_label`. Asymmetric pairs like `Cost Center Name` / `Cost Centers` or `Product Name` / `Products` are a Blocker — the "Name" (or any field-level qualifier) has leaked from the `label` field's title into the entity label and will propagate to every UI surface that renders the entity name. Fix by setting `singular_label` to the bare singular (`Cost Center`, `Product`); if the auto-created `label` field needs a more specific title (e.g. "License Plate"), update that field's `title` via `update_field` after `create_entity` — do not smuggle it into `singular_label`. See `./references/data-modeling.md` → "Customizing the `label` field's title".
 - A `label_column` field is declared (notes say it's the entity's label)
 - 🔴 **`label_column` is a `string` (or other scalar) field — never a `reference` or `parent` FK.** Semantius auto-creates a field with the same name as `label_column`; if that name belongs to a FK field the agent will try to create it twice, causing a platform conflict. For junction tables specifically, verify a dedicated scalar label field exists (e.g. `product_tag_label`) — do not accept a FK column as the label_column.
 - No auto-fields declared (`id`, `created_at`, `updated_at`, label)

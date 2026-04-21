@@ -57,7 +57,7 @@ semantius-cli call crud create_entity '{
     "table_name": "products",
     "singular": "product",
     "plural": "products",
-    "singular_label": "Product Name",
+    "singular_label": "Product",
     "plural_label": "Products",
     "description": "A catalog product available for sale",
     "label_column": "product_name",
@@ -79,7 +79,7 @@ semantius-cli call crud create_entity '{
 | Field | Notes |
 |-------|-------|
 | `table_name` | **Plural** snake_case, stable — **never change after creation** |
-| `singular_label` | Human-readable name; also becomes the label field's title (e.g. "Product Name") |
+| `singular_label` | Human-readable name for **one record** (e.g. `Product`). Must be grammatically symmetric with `plural_label` — if `plural_label` is "Products", this must be "Product", never "Product Name". Field-level titles like "Product Name" belong on the auto-created `label` field, not here (see Customizing the `label` field's title below). |
 | `plural_label` | e.g. "Products" |
 | `label_column` | Snake_case **field name** that identifies a record (e.g. `product_name`). NOT a human-readable title |
 | `module_id` | Required — find with `read_module` |
@@ -102,6 +102,10 @@ When `create_entity` is called, the system automatically creates:
 > ⚠️ Calling `create_field` for any of these will fail or create duplicates.
 
 > ℹ️ `searchable` on the entity is **read-only** — computed automatically when any field has `searchable: true`. Do not try to set it directly on the entity.
+
+### Customizing the `label` field's title
+
+The auto-created `label` field's `title` defaults to `singular_label`. If the record's identifying value is more specific than the entity name, follow up with `update_field` on the `label` field to set its `title`. Example: an entity `cars` where each record is identified by its license plate — keep `singular_label: "Car"` / `plural_label: "Cars"` (symmetric), then update the `label` field's title to `"License Plate"`. See "Updating and Deleting Entities" below for the `update_field` call shape. Do **not** smuggle the field-level title into `singular_label` (e.g. `"Car License Plate"`) — that breaks plural/singular symmetry and propagates "Name"/"License Plate" into every UI surface that renders the entity name.
 
 ---
 
