@@ -17,7 +17,7 @@ description: >-
   or asking whether they'd prefer to buy vs build — invoke this skill and
   produce a semantic model. Also use this skill when the user wants to review,
   audit, check, update, customize, or extend an existing `*-semantic-model.md`
-  file (or the legacy `*-data-model-prd.md` form). Use for greenfield modeling,
+  file. Use for greenfield modeling,
   adopting existing SaaS vendor schemas (Salesforce, Zendesk, ServiceNow,
   Workday, HubSpot, Jira, Linear, Productboard, etc.), and reviewing or
   evolving models already built.
@@ -44,13 +44,13 @@ Before doing anything else, figure out which of these three modes applies:
 | Mode | When to use |
 |---|---|
 | **Create** | User wants a brand-new semantic model. No existing file. |
-| **Audit** | User has an existing `*-semantic-model.md` (or legacy `*-data-model-prd.md`) and wants it checked for quality, completeness, or correctness. |
+| **Audit** | User has an existing `*-semantic-model.md` and wants it checked for quality, completeness, or correctness. |
 | **Extend** | User has an existing semantic model and wants to add entities, fields, or relationships to it. |
 | **Customize** | User says "customize" (or similar — "tweak", "adapt", "tailor") without saying *what* to change. Treat this as: load → **show a brief overview (§1 summary + the §2 entity table)** → ask the user which entities, fields, or relationships they want to customize → then route into Extend or targeted edits. Do **not** run a full audit up front and do **not** guess at changes — the overview is the orientation, the user drives the rest. |
 
 If the user uploaded or referenced a semantic-model file, you're in Audit, Extend, or Customize mode — ask which one if it's not obvious from context. If there's no existing file, you're in Create mode.
 
-When in Audit, Extend, or Customize mode, read the file before doing anything else. If the user hasn't told you the path, ask for it (or look in the workspace folder for `*-semantic-model.md` or `*-data-model-prd.md` files).
+When in Audit, Extend, or Customize mode, read the file before doing anything else. If the user hasn't told you the path, ask for it (or look in the workspace folder for `*-semantic-model.md` files).
 
 > **🛑 Fetching remote models — use `curl`, not WebFetch.** If the file is at an `http(s)` URL, fetch the raw bytes via Bash (`curl -s <url>`) and read the full output. **Never use WebFetch for a semantic model.** WebFetch runs the content through an HTML→markdown summarization pass that silently strips YAML front-matter and can alter structural details. Auditing the WebFetch output will produce false blocker findings (most commonly "front-matter missing" when it is actually present) and erode user trust. This rule applies in every mode.
 
@@ -197,7 +197,7 @@ Once all entities have fields, summarize and ask the user: *"Any fields to add, 
 
 ### Stage 4b — Build the Mermaid entity-relationship diagram
 
-The §2 Entity summary includes a Mermaid **flowchart** that visualises every entity and every relationship in the model. We use flowchart style (not the formal `erDiagram` Crow's-Foot notation) so the diagram stays readable for non-technical reviewers. Before Stage 5, draft the diagram from the confirmed entity list and relationships:
+The §2 Entity summary includes a Mermaid **flowchart** that visualises every entity and every relationship in the model. Before Stage 5, draft the diagram from the confirmed entity list and relationships:
 
 - Use ```` ```mermaid\nflowchart LR ```` as the opening (top-down `flowchart TB` is fine if the graph is wider than tall, but `LR` is the default).
 - **Every** entity in the §2 summary table must appear as a node.
@@ -257,7 +257,7 @@ After listing findings, give an overall summary: how many issues of each severit
 
 **Front-matter (YAML block)**
 - All seven keys present: `artifact`, `system_name`, `system_slug`, `domain`, `naming_mode`, `created_at`, `initial_request`
-- `artifact` is `semantic-model` (legacy `semantic-data-model-prd` is accepted on read; flag as 🟢 Suggestion to update on next write)
+- `artifact` is `semantic-model`
 - `naming_mode` is either `template:<vendor>` or `agent-optimized`
 - `system_slug` is snake_case
 - `created_at` is a valid date
@@ -269,7 +269,7 @@ After listing findings, give an overall summary: how many issues of each severit
 - §2 Entity summary contains a Mermaid flowchart sub-section immediately after the entity table
 
 **Mermaid entity-relationship diagram (§2)** _(treat missing/incorrect as 🔴 Blocker)_
-- The diagram is present and wrapped in a ```` ```mermaid ```` fenced block with `flowchart LR` (or `flowchart TB`) as the first line. Files using the legacy `erDiagram` Crow's-Foot notation should be converted to flowchart style — flag as 🔴 Blocker and offer to regenerate.
+- The diagram is present and wrapped in a ```` ```mermaid ```` fenced block with `flowchart LR` (or `flowchart TB`) as the first line.
 - Every `table_name` that appears in the §2 summary table appears as a node in the diagram
 - Every row in the §4 relationship summary appears as an edge in the diagram, with matching direction (From → To) and cardinality (N:1, 1:N, 1:1, M:N)
 - Cardinality is encoded by edge style: `-->` means "many" (1:N); `---` means "one" (1:1). An edge that uses the wrong style for the §4 cardinality is a 🔴 Blocker.
@@ -279,7 +279,6 @@ After listing findings, give an overall summary: how many issues of each severit
 - Edge labels, where present, are short verb phrases using the `-->|verb|` or `---|verb|` syntax (`"has"`, `"belongs to"`, `"assigned to"`); unlabeled edges are allowed but 🟡 Warning when the relationship is non-obvious
 
 **Entity health (for each entity in §3)**
-- 🔴 **`singular_label` and `plural_label` are grammatically symmetric.** `singularize(plural_label)` must equal `singular_label`. Asymmetric pairs like `Cost Center Name` / `Cost Centers` or `Product Name` / `Products` are a Blocker — the "Name" (or any field-level qualifier) has leaked from the `label` field's title into the entity label and will propagate to every UI surface that renders the entity name. Fix by setting `singular_label` to the bare singular (`Cost Center`, `Product`); if the auto-created `label` field needs a more specific title (e.g. "License Plate"), update that field's `title` via `update_field` after `create_entity` — do not smuggle it into `singular_label`. See `./references/data-modeling.md` → "Customizing the `label` field's title".
 - A `label_column` field is declared (notes say it's the entity's label)
 - 🔴 **`label_column` is a `string` (or other scalar) field — never a `reference` or `parent` FK.** Semantius auto-creates a field with the same name as `label_column`; if that name belongs to a FK field the agent will try to create it twice, causing a platform conflict. For junction tables specifically, verify a dedicated scalar label field exists (e.g. `product_tag_label`) — do not accept a FK column as the label_column.
 - No auto-fields declared (`id`, `created_at`, `updated_at`, label)
@@ -395,7 +394,7 @@ Update the file in place:
 
 **Before saving, run a self-audit pass on the updated draft.** Work through every 🔴 Blocker check from the Audit checklist (Mode B) — including the Mermaid diagram checks — and fix any issues before writing. Do not save a file that would fail its own audit.
 
-Save back to the same filename in the workspace folder (or, if the existing file uses the legacy `*-data-model-prd.md` suffix, save alongside it as `*-semantic-model.md` and point the user at the new file — leave the legacy file untouched unless the user asks you to migrate). Share the `computer://` link with a one-sentence summary of what changed.
+Save back to the same filename in the workspace folder. Share the `computer://` link with a one-sentence summary of what changed.
 
 ---
 

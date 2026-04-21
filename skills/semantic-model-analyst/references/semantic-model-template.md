@@ -33,7 +33,7 @@ initial_request: |
 
 ### Entity-relationship diagram
 
-A Mermaid **flowchart** showing every entity in this model and every relationship declared in §3/§4. We deliberately use flowchart style (not the formal Crow's-Foot `erDiagram` notation) so the diagram is readable for non-technical reviewers. The diagram must be **complete** (every entity and every relationship appears) and **consistent** (cardinality and direction match §3/§4). The audit cycle verifies this.
+A Mermaid **flowchart** showing every entity in this model and every relationship declared in §3/§4. The diagram must be **complete** (every entity and every relationship appears) and **consistent** (cardinality and direction match §3/§4). The audit cycle verifies this.
 
 ```mermaid
 flowchart LR

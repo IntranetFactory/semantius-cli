@@ -1,6 +1,6 @@
 ---
 name: semantic-model-deployer
-description: Safely deploys a *-semantic-model.md file (produced by the semantic-model-analyst skill; legacy *-data-model-prd.md files are also accepted) to a live Semantius instance using the semantius-cli. Before any writes, reconciles the model against the existing catalog — updates an existing module in place when the slug matches, extends Semantius built-ins (`users`, `roles`, `permissions`, …) additively instead of replacing them, refuses duplicate entity names across modules, and surfaces explicit merge/rename decisions for near-duplicates (e.g. `contracts` vs `saas_contracts` vs `vendor_contracts`). Use whenever a semantic-model file exists and the user wants to deploy, apply, push, sync, integrate, reconcile, or roll out the model — including phrasings like "implement the model", "deploy the model", "apply the schema", "set up the entities", "create the entities in Semantius", "push this to Semantius", "integrate this model with what's already there", or "now make it real". Also trigger when the user uploads or references a *-semantic-model.md (or legacy *-data-model-prd.md) and asks to do anything that would materialize it. Trigger proactively when such a file is present and the user's intent is clearly to deploy it.
+description: Safely deploys a *-semantic-model.md file (produced by the semantic-model-analyst skill) to a live Semantius instance using the semantius-cli. Before any writes, reconciles the model against the existing catalog — updates an existing module in place when the slug matches, extends Semantius built-ins (`users`, `roles`, `permissions`, …) additively instead of replacing them, refuses duplicate entity names across modules, and surfaces explicit merge/rename decisions for near-duplicates (e.g. `contracts` vs `saas_contracts` vs `vendor_contracts`). Use whenever a semantic-model file exists and the user wants to deploy, apply, push, sync, integrate, reconcile, or roll out the model — including phrasings like "implement the model", "deploy the model", "apply the schema", "set up the entities", "create the entities in Semantius", "push this to Semantius", "integrate this model with what's already there", or "now make it real". Also trigger when the user uploads or references a *-semantic-model.md and asks to do anything that would materialize it. Trigger proactively when such a file is present and the user's intent is clearly to deploy it.
 ---
 
 # semantic-model-deployer Skill
@@ -64,10 +64,10 @@ Work through each stage in order. Narrate what you're doing at each step.
 
 ## Stage 1: Parse the semantic model
 
-Locate the `*-semantic-model.md` file (accept the legacy `*-data-model-prd.md` suffix as well). Extract:
+Locate the `*-semantic-model.md` file. Extract:
 
 - **`system_slug`** from YAML frontmatter — this is the module name
-- **Human-readable system name** — from the top-level heading (`# ... — Semantic Model` or legacy `# ... Data Model PRD`)
+- **Human-readable system name** — from the top-level heading (`# ... — Semantic Model`)
 - **Entity list** — from the §2 entity summary table, in order
 - **Per-entity details** from each §3 entity subsection:
   - `table_name`, `singular`, `plural`, `singular_label`, `plural_label`, `description`, `label_column`
