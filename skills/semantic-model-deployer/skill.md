@@ -233,7 +233,15 @@ If the module already exists, swap `✨ Will create` for `♻️ Exists (ID: 12)
 
 ### Ambiguity decisions (required when any 🛑 was raised)
 
-For every cross-module exact-name match and every similar-name match, present a side-by-side comparison and ask explicitly. Never propose a default silently.
+**Every 🛑 decision must be taken via the `AskUserQuestion` tool** — not via prose options the user has to type back ("a or b"). Structured widgets remove the letter-mapping friction, survive multi-decision flows cleanly, and match how the `semantic-model-analyst` skill handles its own big decision. Never propose a default silently.
+
+**The protocol for each 🛑:**
+
+1. **Print the comparison block first as prose** — so the user has the facts in front of them before the widget appears. Comparison blocks carry information; the tool carries only the choice.
+2. **Then call `AskUserQuestion`** with the decision as a single question. Use 4 explicit options; the runtime auto-adds an "Other" slot you can use for free-text renames or "abort".
+3. **Batch multiple 🛑 gates into one `AskUserQuestion` call** with one question per gate. Never drip decisions one turn at a time. Never squash two decisions into the same prose paragraph (the screenshot of "(a or b) and (yes/no)" is exactly the failure mode this directive prevents).
+
+**Example — comparison block (prose, shown first):**
 
 ```
 ⚠️ Ambiguity: `contracts`
@@ -253,25 +261,32 @@ For every cross-module exact-name match and every similar-name match, present a 
 
   Overlap: both share `contract_number` (string). Other fields are disjoint;
   the entities model different concepts that happen to share an English word.
-
-  How should I resolve this?
-    (a) Merge — treat these as the same entity. I'll unify fields under
-        `contracts`; non-overlapping fields from the incoming model will be
-        added additively. Only safe when the two truly represent the same
-        business concept (not the case here at first read).
-    (b) Rename incoming → `saas_contracts` (keeps your new model isolated;
-        recommended when the two concepts are genuinely different)
-    (c) Rename existing → e.g. `facility_contracts` (touches live records
-        and any FK pointing at `contracts`; high-risk, may require data
-        migration — warn before proceeding)
-    (d) Rename both → e.g. `saas_contracts` + `facility_contracts`
-        (most conservative; removes ambiguity entirely, marks the catalog
-        explicitly domain-scoped)
-    (e) Abort — I'll go back to the analyst skill and redesign
-
 ```
 
-For **similar-name** flags, use the same format but note the heuristic that matched (prefix/suffix/synonym/etc.) so the user can evaluate whether it's a real collision or a coincidence.
+**Example — the matching `AskUserQuestion` call:**
+
+- **question**: `"How should I resolve the name collision on `contracts`?"`
+- **header**: `"Ambiguity: contracts"`
+- **multiSelect**: `false`
+- **options** (4; the runtime appends Other):
+  1. label `"Rename incoming → saas_contracts"`, description `"Keep the two concepts isolated. Recommended when they are genuinely different — the facility-management lease is not the same thing as a SaaS subscription agreement."`
+  2. label `"Rename both (saas_contracts + facility_contracts)"`, description `"Most conservative. Removes ambiguity entirely by marking the catalog explicitly domain-scoped. High-risk second half — renaming the existing entity touches live records and FKs."`
+  3. label `"Merge into existing `contracts`"`, description `"Treat as the same entity. Non-overlapping fields are added additively. Only safe when the two truly represent the same business concept (does not look like it here)."`
+  4. label `"Rename existing → facility_contracts"`, description `"Keep the incoming name as `contracts`. High-risk — touches live records and any FK pointing at the existing table; may require data migration. Confirm twice before proceeding."`
+
+The auto-"Other" slot handles: the user wants to abort, or the user wants a different custom name than the four suggested ones.
+
+### If multiple 🛑 were raised
+
+Send them all in **one** `AskUserQuestion` call as separate questions in the `questions` array. The comparison blocks print as prose in order above the tool call; the widgets appear as independent choices. Do not chain one-question calls across turns — that's exactly the pattern that produced the confusing "(a or b) and (yes/no)" UX.
+
+### For similar-name flags
+
+Use the same protocol; phrase the question to make clear the match is a *heuristic*, not a verdict (e.g. `"Does `lease_contracts` in this model refer to the same concept as the existing `contracts`?"`). Include the heuristic that matched (prefix/suffix/synonym/qualifier) in the comparison block so the user can judge whether it's a real collision or a coincidence.
+
+### Fallback — when `AskUserQuestion` isn't available
+
+If the tool is not available in the harness, fall back to labeled prose options with the same content — but present **exactly one decision per turn**, not multiple. Use clearly labeled choices ("A", "B", "C", "D", "Other — specify") and wait for the user's reply before moving to the next decision. Never combine multiple decisions into one prose prompt.
 
 ### Merge / rename rules
 
@@ -284,16 +299,22 @@ For **similar-name** flags, use the same format but note the heuristic that matc
 **Rename incoming (b):**
 
 - Pick a qualifier from the model's domain (`saas_`, `hr_`, `billing_`) and propose it. The user may override.
-- **Rewrite every internal reference in the model before Stage 4** — FK fields that point at the renamed entity, `reference_table` values, relationship prose, the §2 Mermaid diagram references. The rename applies only to the in-memory plan, not the saved model file (unless the user asks to also update the source file via the analyst skill).
+- **Rewrite every reference in the plan before any Stage 4 writes.** Purely in-memory — no live data exists yet for the incoming entity, so this is safe as long as it's *complete*:
+  - The entity's `table_name` in the plan
+  - **Every field in this model where `reference_table` equals the old name.** Fields in *other entities in this same model* that point at the renamed entity (e.g. `license_assignments.subscription_id → subscriptions` when renaming `subscriptions` → `saas_subscriptions`) silently break if this step is missed — they'd end up pointing at a non-existent table.
+  - Relationship prose in the plan summary
+  - Mermaid diagram node + edge names
+- The source `.md` file is left unchanged unless the user explicitly asks the analyst skill to update it.
 
 **Rename existing (c):**
 
-- **High-risk.** Confirm twice. `table_name` rename touches every FK pointing at that table plus all existing records. If the platform rejects `update_entity` on `table_name` (it often does — the underlying PG table name is usually immutable in practice), tell the user immediately and offer (d) or (a) as a fallback.
-- If the rename succeeds, fix every `reference_table` that pointed at the old name in a second pass.
+- **High-risk.** Confirm twice. The data-modeling reference calls `table_name` immutable, so `update_entity` may reject the rename outright. If it does, stop immediately and offer option (a) merge or (d) rename-both as fallback. Never attempt DDL directly.
+- **No catalog-side FK fix-up is needed.** Semantius propagates renames automatically — every `reference_table` in the catalog that pointed at the old name is updated by the platform as part of the rename. Do not scan, do not issue `update_field` calls for existing FKs. Your only job is to request the rename and confirm it succeeded.
+- Incoming fields in *this* model that point at the renamed entity must still use the new name — that's an in-memory plan rewrite (same mechanic as option (b)) and happens before Stage 4 writes.
 
 **Rename both (d):**
 
-- Apply (b) to the incoming entity and (c) to the existing one. Same caveats as (c) apply.
+- Apply (b) to the incoming entity, then (c) to the existing one. Only the (b) half needs a `reference_table` rewrite (in-memory, across this model). The (c) half's catalog-side FKs are repointed by the platform automatically.
 
 Do not proceed to Stage 4 until every 🛑 has a recorded decision. Restate the resolved plan once before executing.
 
@@ -322,7 +343,7 @@ Refer to `semantius-cli/references/data-modeling.md` for the exact CLI syntax fo
 - ✨ New → `create_entity`. After creation, correct the `label_column` field title if needed with `update_field`.
 - 🛑 Resolved as **merge** → skip `create_entity`. The target is the existing entity in the other module. Record the mapping; the merge is realised in 4d by adding the non-overlapping fields additively to the existing entity.
 - 🛑 Resolved as **rename incoming** → `create_entity` using the new name. (Plan-level rewrite of `reference_table` values has already happened before this stage.)
-- 🛑 Resolved as **rename existing** → attempt `update_entity` on the existing entity's `table_name` first, before any new creates. If the platform rejects the rename, stop and return to Stage 3 — never continue silently. Once the rename is live, any `reference_table` that pointed at the old name must be fixed.
+- 🛑 Resolved as **rename existing** → attempt `update_entity` on the existing entity's `table_name` first, before any new creates. If the platform rejects the rename, stop and return to Stage 3 — never continue silently. Once the rename succeeds, Semantius repoints every catalog-side `reference_table` automatically; no follow-up `update_field` pass is needed.
 - 🛑 Resolved as **rename both** → do the existing-rename first, then `create_entity` for the incoming under its new name.
 - 🛑 Resolved as **abort** → stop Stage 4 entirely; tell the user to iterate on the model with the analyst skill.
 
@@ -357,9 +378,41 @@ Print a final summary: "✅ Done. Created 1 module, 2 permissions, 5 entities, 4
 After verification, ask:
 
 > "The `<SystemName>` model is live in Semantius ✅  
-> Would you like me to generate 10 realistic sample records for each entity?"
+> Would you like me to generate 10 realistic sample records for each newly-created entity?"
 
-If the user says yes, create records in dependency order (entities with no parent FKs first, junction tables last — the model §4 order is usually correct). Skip built-ins (`users`, etc.) unless the user explicitly asks for sample users — built-ins usually already have real records.
+### Scope — whose tables get sample data
+
+**Only entities this run created get sample records.** Everything else is off-limits. Writing seed data into an existing table pollutes live records, confuses reports, and can break referential integrity for users who are actively using the platform.
+
+| Bucket | Eligible for sample data? |
+|---|---|
+| ✨ New entities created this run | ✅ Yes |
+| 🛑 Resolved as "rename incoming" (a new table under the renamed name) | ✅ Yes — it's a new table |
+| 🛑 Resolved as "rename both" — the *incoming* side | ✅ Yes — new table |
+| 🛑 Resolved as "rename existing" | ❌ **Never** — the table already has records |
+| 🛑 Resolved as "merge" — target existing entity | ❌ **Never** — existing table |
+| ♻️ Same-module match (entity already existed) | ❌ **Never** — existing table |
+| 🔒 Built-in `users` | ⚠️ Off by default — allowed only after explicit confirmed override (see below) |
+| 🔒 Other Semantius built-ins (`roles`, `permissions`, `permission_hierarchy`, `role_permissions`, `user_roles`, `webhook_receivers`, `webhook_receiver_logs`, `modules`, `entities`, `fields`) | ❌ **Never, under any circumstances** — no override |
+
+**Sample `users` — off by default, confirmed override allowed.** `users` is platform infrastructure — it controls authentication. Fake users cannot log in (no password, no real IdP identity), cannot receive meaningful role assignments, and will pollute audit trails. **Default behaviour: decline and explain these limitations.** If after that explanation the user still wants sample users and explicitly confirms they understand the generated users cannot log in, you may proceed. When you do:
+
+- Use clearly-synthetic identifiers: `email: "sample1@example.invalid"` (the `.invalid` TLD is reserved exactly for this), `full_name: "Sample User 1"`, etc.
+- If the model has a `status` / `is_active` / similar field on users, seed to an inactive/test value so the rows can't be mistaken for real accounts.
+- Never assign roles to sample users (no `user_roles` inserts — that's the absolute-never bucket below).
+- Surface the override in the final summary: *"Created N sample users per your explicit request — none of them can log in."*
+
+**Other built-in tables stay absolute — no override.** `roles`, `permissions`, `permission_hierarchy`, `role_permissions`, `user_roles`, `webhook_receivers`, `webhook_receiver_logs`, `modules`, `entities`, `fields`. These control RBAC, integrations, and the platform's own schema; seeding fake rows corrupts real users' access and the platform itself. Decline every request, even confirmed ones.
+
+### FK fields that point at ineligible tables
+
+A new entity often has FKs to built-ins or existing entities (e.g. `subscriptions.business_owner_id → users`, `subscriptions.primary_department_id → departments` when `departments` is pre-existing). For those fields:
+
+- **Read existing records** from the target table (e.g. `GET /users?select=id&limit=20`) and **pick real IDs at random** to use as FK values.
+- Never insert synthetic target records to satisfy the FK. If the target table has zero rows and seeding would require inventing one, skip the FK (leave it null if nullable) or skip the sample record entirely.
+- For FKs into **other newly-created entities** in the same run, capture the inserted IDs from those earlier POSTs (see script pattern below) and reference them normally.
+
+Create records in dependency order (entities with no parent FKs first, junction tables last — the model §4 order is usually correct), restricted to the eligible set defined above.
 
 **Generate a single shell script** for all sample data rather than making individual CLI calls. This avoids context bloat from dozens of sequential tool invocations. Write the script to a temp file, run it once, and check the output.
 
