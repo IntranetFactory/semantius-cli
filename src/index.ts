@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 /**
- * semantius-cli - A lightweight CLI for interacting with MCP servers
+ * semantius - A lightweight CLI for interacting with MCP servers
  *
  * Commands:
- *   semantius-cli                         List all servers and tools
- *   semantius-cli info <server>            Show server details
- *   semantius-cli info <server> <tool>     Show tool schema
- *   semantius-cli grep <pattern>           Search tools by glob pattern
- *   semantius-cli call <server> <tool>     Call tool (reads JSON from stdin if no args)
- *   semantius-cli call <server> <tool> {}  Call tool with JSON args
+ *   semantius                         List all servers and tools
+ *   semantius info <server>            Show server details
+ *   semantius info <server> <tool>     Show tool schema
+ *   semantius grep <pattern>           Search tools by glob pattern
+ *   semantius call <server> <tool>     Call tool (reads JSON from stdin if no args)
+ *   semantius call <server> <tool> {}  Call tool with JSON args
  */
 
 import { callCommand } from './commands/call.js';
@@ -324,21 +324,21 @@ function printHelp(): void {
   );
 
   console.log(`
-semantius-cli v${VERSION} - CLI for the Semantius platform
+semantius v${VERSION} - CLI for the Semantius platform
 
 Usage:
-  semantius-cli [options]                              List all servers and tools
-  semantius-cli [options] info <server>                Show server details
-  semantius-cli [options] info <server> <tool>         Show tool schema
-  semantius-cli [options] grep <pattern>               Search tools by glob pattern
-  semantius-cli [options] call <server> <tool>         Call tool (reads JSON from stdin if no args)
-  semantius-cli [options] call <server> <tool> <json>  Call tool with JSON arguments
+  semantius [options]                              List all servers and tools
+  semantius [options] info <server>                Show server details
+  semantius [options] info <server> <tool>         Show tool schema
+  semantius [options] grep <pattern>               Search tools by glob pattern
+  semantius [options] call <server> <tool>         Call tool (reads JSON from stdin if no args)
+  semantius [options] call <server> <tool> <json>  Call tool with JSON arguments
 
 Formats (both work):
-  semantius-cli info server tool                       Space-separated
-  semantius-cli info server/tool                       Slash-separated
-  semantius-cli call server tool '{}'                  Space-separated
-  semantius-cli call server/tool '{}'                  Slash-separated
+  semantius info server tool                       Space-separated
+  semantius info server/tool                       Slash-separated
+  semantius call server tool '{}'                  Space-separated
+  semantius call server/tool '{}'                  Slash-separated
 
 Options:
   -h, --help               Show this help message
@@ -347,18 +347,18 @@ Options:
   -md, --markdown          Dump full documentation as markdown (README, SKILL, all tools)
 
 Output:
-  semantius-cli/info/grep  Human-readable text to stdout
+  semantius/info/grep      Human-readable text to stdout
   call                     Raw JSON to stdout (for piping)
   Errors                   Always to stderr
 
 Examples:
-  semantius-cli                                        # List all servers
-  semantius-cli -d                                     # List with descriptions
-  semantius-cli grep "*crud*"                          # Search for crud tools
-  semantius-cli info crud                              # Show server tools
-  semantius-cli info crud create_record                # Show tool schema
-  semantius-cli call crud create_record '{}'           # Call tool
-  cat input.json | semantius-cli call crud create_record  # Read from stdin (no '-' needed)
+  semantius                                        # List all servers
+  semantius -d                                     # List with descriptions
+  semantius grep "*crud*"                          # Search for crud tools
+  semantius info crud                              # Show server tools
+  semantius info crud create_record                # Show tool schema
+  semantius call crud create_record '{}'           # Call tool
+  cat input.json | semantius call crud create_record  # Read from stdin (no '-' needed)
 
 Environment Variables:
   SEMANTIUS_API_KEY      API key for Semantius (required)
@@ -418,7 +418,7 @@ async function main(): Promise<void> {
 
   if (args.command === 'version') {
     await loadDotEnv();
-    console.log(`semantius-cli v${VERSION}`);
+    console.log(`semantius v${VERSION}`);
     const missingVars = ['SEMANTIUS_API_KEY', 'SEMANTIUS_ORG'].filter(
       (v) => !process.env[v],
     );

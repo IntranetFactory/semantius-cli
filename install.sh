@@ -32,15 +32,15 @@ ARCH=$(uname -m)
 case "$OS" in
     linux)
         case "$ARCH" in
-            x86_64) BINARY="semantius-cli-linux-x64" ;;
-            aarch64) BINARY="semantius-cli-linux-arm64" ;;
+            x86_64) BINARY="semantius-linux-x64" ;;
+            aarch64) BINARY="semantius-linux-arm64" ;;
             *) echo -e "${RED}Unsupported architecture: $ARCH${NC}"; exit 1 ;;
         esac
         ;;
     darwin)
         case "$ARCH" in
-            x86_64) BINARY="semantius-cli-darwin-x64" ;;
-            arm64) BINARY="semantius-cli-darwin-arm64" ;;
+            x86_64) BINARY="semantius-darwin-x64" ;;
+            arm64) BINARY="semantius-darwin-arm64" ;;
             *) echo -e "${RED}Unsupported architecture: $ARCH${NC}"; exit 1 ;;
         esac
         ;;
@@ -63,16 +63,16 @@ GITHUB_REPO="IntranetFactory/semantius-cli"
 
 # Print banner
 echo ""
-echo -e "${BOLD}Installing semantius-cli${NC}"
+echo -e "${BOLD}Installing semantius${NC}"
 echo ""
 echo -e "  ${BOLD}Platform${NC}:  $OS/$ARCH"
 echo -e "  ${BOLD}Binary${NC}:    $BINARY"
-echo -e "  ${BOLD}Location${NC}:  $INSTALL_DIR/semantius-cli"
+echo -e "  ${BOLD}Location${NC}:  $INSTALL_DIR/semantius"
 echo ""
 
 # Check for existing installation
-if command -v semantius-cli &> /dev/null; then
-    EXISTING_VERSION=$(semantius-cli --version 2>/dev/null || echo "unknown")
+if command -v semantius &> /dev/null; then
+    EXISTING_VERSION=$(semantius --version 2>/dev/null || echo "unknown")
     echo -e "${YELLOW}Note: Updating existing installation ($EXISTING_VERSION)${NC}"
     echo ""
 fi
@@ -131,24 +131,24 @@ fi
 # Install
 echo -e "${BLUE}Installing...${NC}"
 if [ -w "$INSTALL_DIR" ]; then
-    mv "$TMP_FILE" "$INSTALL_DIR/semantius-cli"
+    mv "$TMP_FILE" "$INSTALL_DIR/semantius"
 else
     echo -e "${YELLOW}Requires sudo to install to $INSTALL_DIR${NC}"
-    sudo mv "$TMP_FILE" "$INSTALL_DIR/semantius-cli"
+    sudo mv "$TMP_FILE" "$INSTALL_DIR/semantius"
 fi
 TMP_FILE=""  # Clear so cleanup doesn't try to delete
 
 # Success message
 echo ""
-echo -e "${GREEN}✓ semantius-cli installed successfully!${NC}"
+echo -e "${GREEN}✓ semantius installed successfully!${NC}"
 echo ""
 
 # Check if in PATH and show version
-if command -v semantius-cli &> /dev/null; then
-    semantius-cli --version
+if command -v semantius &> /dev/null; then
+    semantius --version
 else
     # Not in PATH - show setup instructions
-    echo -e "${YELLOW}Add semantius-cli to your PATH:${NC}"
+    echo -e "${YELLOW}Add semantius to your PATH:${NC}"
     echo ""
     
     SHELL_NAME=$(basename "$SHELL")
@@ -172,5 +172,5 @@ else
 fi
 
 echo "Get started:"
-echo "  semantius-cli --help"
+echo "  semantius --help"
 echo ""

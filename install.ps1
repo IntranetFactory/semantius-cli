@@ -16,8 +16,8 @@ function Write-Red    { param($msg) Write-Host $msg -ForegroundColor Red }
 # Detect architecture
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
 switch ($arch) {
-    'X64'   { $binary = 'semantius-cli-windows-x64.exe' }
-    'Arm64' { $binary = 'semantius-cli-windows-arm64.exe' }
+    'X64'   { $binary = 'semantius-windows-x64.exe' }
+    'Arm64' { $binary = 'semantius-windows-arm64.exe' }
     default {
         Write-Red "Unsupported architecture: $arch"
         exit 1
@@ -27,11 +27,11 @@ switch ($arch) {
 $githubRepo = 'IntranetFactory/semantius-cli'
 $downloadUrl = "https://github.com/$githubRepo/releases/latest/download/$binary"
 $checksumUrl = "https://github.com/$githubRepo/releases/latest/download/checksums.txt"
-$destExe     = Join-Path $InstallDir 'semantius-cli.exe'
+$destExe     = Join-Path $InstallDir 'semantius.exe'
 
 # Print banner
 Write-Host ""
-Write-Host "Installing semantius-cli" -ForegroundColor White -BackgroundColor DarkBlue
+Write-Host "Installing semantius" -ForegroundColor White -BackgroundColor DarkBlue
 Write-Host ""
 Write-Host "  Platform  : Windows/$arch"
 Write-Host "  Binary    : $binary"
@@ -39,8 +39,8 @@ Write-Host "  Location  : $destExe"
 Write-Host ""
 
 # Check for existing installation
-if (Get-Command 'semantius-cli' -ErrorAction SilentlyContinue) {
-    $existingVersion = & semantius-cli --version 2>$null
+if (Get-Command 'semantius' -ErrorAction SilentlyContinue) {
+    $existingVersion = & semantius --version 2>$null
     Write-Yellow "Note: Updating existing installation ($existingVersion)"
     Write-Host ""
 }
@@ -96,7 +96,7 @@ Write-Blue "Installing..."
 Move-Item -Path $tmpFile -Destination $destExe -Force
 
 Write-Host ""
-Write-Green "semantius-cli installed successfully!"
+Write-Green "semantius installed successfully!"
 Write-Host ""
 
 # Add to PATH for current user if not already present
@@ -108,7 +108,7 @@ if ($userPath -notlike "*$InstallDir*") {
         "$userPath;$InstallDir",
         'User'
     )
-    Write-Green "PATH updated. Restart your terminal (or open a new one) to use semantius-cli."
+    Write-Green "PATH updated. Restart your terminal (or open a new one) to use semantius."
 } else {
     # Already in PATH - show installed version
     if (Test-Path $destExe) {
@@ -118,5 +118,5 @@ if ($userPath -notlike "*$InstallDir*") {
 
 Write-Host ""
 Write-Host "Get started:"
-Write-Host "  semantius-cli --help"
+Write-Host "  semantius --help"
 Write-Host ""

@@ -94,7 +94,7 @@ describe('CLI Integration Tests', () => {
       const stdout = await new Response(proc.stdout).text();
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('semantius-cli');
+      expect(stdout).toContain('semantius');
       expect(stdout).toContain('Usage:');
       expect(stdout).toContain('Options:');
     });
@@ -112,7 +112,7 @@ describe('CLI Integration Tests', () => {
       const stdout = await new Response(proc.stdout).text();
 
       expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/semantius-cli v\d+\.\d+\.\d+/);
+      expect(stdout).toMatch(/semantius v\d+\.\d+\.\d+/);
     });
   });
 
