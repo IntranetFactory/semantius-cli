@@ -1,19 +1,19 @@
 ---
-name: semantius-cli
+name: semantius
 description: >-
-  Use this skill for anything involving the Semantius platform via semantius-cli.
+  Use this skill for anything involving the Semantius platform via semantius.
   Trigger when the user wants to: create, read, update, or delete entities,
   fields, modules, permissions, roles, users, or business records; build or query
   a semantic data model; set up RBAC; insert or import data into Semantius
   tables; or run analytical queries across Semantius data. Also trigger when
-  writing shell scripts or Bun scripts that chain semantius-cli commands.
+  writing shell scripts or Bun scripts that chain semantius commands.
 ---
 
-# semantius-cli Skill
+# semantius Skill
 
 **Semantius** is a low-code platform that lets you define a semantic data model — entities, fields, relationships, and access rules — and instantly get a fully managed PostgreSQL database with a REST API, auto-generated UI, and an analytics layer behind it. You define *what* your data looks like (Layer 1), and Semantius handles storage, querying (Layer 2), and cross-table analytics (Layer 3).
 
-`semantius-cli` is the official CLI that gives shell and agent access to two servers: `crud` (schema management + record operations) and `cube` (CubeJS-compatible analytics).
+`semantius` is the official CLI that gives shell and agent access to two servers: `crud` (schema management + record operations) and `cube` (CubeJS-compatible analytics).
 
 ---
 
@@ -84,31 +84,31 @@ Understanding which layer you're working with determines which tools to use:
 
 ## Environment Setup
 
-**First, verify semantius-cli is installed:**
+**First, verify semantius is installed:**
 
 ```bash
-semantius-cli --version
+semantius --version
 ```
 
-If this command fails (command not found, exit code 127), STOP immediately. Do NOT attempt to run any semantius-cli commands. Instead, tell the user:
+If this command fails (command not found, exit code 127), STOP immediately. Do NOT attempt to run any semantius commands. Instead, tell the user:
 
-> "semantius-cli is not installed. Please install it first:
+> "semantius is not installed. Please install it first:
 > - Linux/macOS: curl -fsSL https://raw.githubusercontent.com/IntranetFactory/semantius-cli/main/install.sh | bash
 > - Windows: Run PowerShell as admin and run: irm https://raw.githubusercontent.com/IntranetFactory/semantius-cli/main/install.ps1 | iex"
 
-Do not proceed with any other tasks until the CLI is installed and `semantius-cli --version` returns successfully.
+Do not proceed with any other tasks until the CLI is installed and `semantius --version` returns successfully.
 
 **Then verify environment variables:**
 
 ```bash
-semantius-cli info
+semantius info
 ```
 
 If this fails with "Missing required environment variables" or similar error, list what's missing and STOP. Required variables:
 - `SEMANTIUS_API_KEY` — your API key
 - `SEMANTIUS_ORG` — your organization name
 
-Do not proceed until both are set and `semantius-cli info` returns successfully.
+Do not proceed until both are set and `semantius info` returns successfully.
 
 Once verified, set up credentials:
 
@@ -124,13 +124,13 @@ Or place in a `.env` file next to the executable (Windows) or in the current dir
 ## Core CLI Commands
 
 ```bash
-semantius-cli                              # List all servers and tools
-semantius-cli -d                           # List with descriptions
-semantius-cli info <server>               # Show tools for a server
-semantius-cli info <server> <tool>        # Get tool JSON schema
-semantius-cli grep "<pattern>"            # Search tools by glob
-semantius-cli call <server> <tool> '{}'   # Call tool with inline JSON
-semantius-cli call <server> <tool>        # Call tool — reads JSON from stdin
+semantius                              # List all servers and tools
+semantius -d                           # List with descriptions
+semantius info <server>               # Show tools for a server
+semantius info <server> <tool>        # Get tool JSON schema
+semantius grep "<pattern>"            # Search tools by glob
+semantius call <server> <tool> '{}'   # Call tool with inline JSON
+semantius call <server> <tool>        # Call tool — reads JSON from stdin
 ```
 
 Both `info <server> <tool>` and `info <server>/<tool>` work interchangeably.
@@ -146,13 +146,13 @@ Both `info <server> <tool>` and `info <server>/<tool>` work interchangeably.
 **Layer 2 `postgrestRequest`** operates on your actual business data. Any entity you define becomes a PostgreSQL table accessible via PostgREST:
 ```bash
 # Read records from your 'products' entity
-semantius-cli call crud postgrestRequest '{"method":"GET","path":"/products?status=eq.active&order=name.asc"}'
+semantius call crud postgrestRequest '{"method":"GET","path":"/products?status=eq.active&order=name.asc"}'
 
 # Insert a new order record
-semantius-cli call crud postgrestRequest '{"method":"POST","path":"/orders","body":{"customer_id":"123","total":99.99}}'
+semantius call crud postgrestRequest '{"method":"POST","path":"/orders","body":{"customer_id":"123","total":99.99}}'
 
 # Update matching records
-semantius-cli call crud postgrestRequest '{"method":"PATCH","path":"/products?category=eq.electronics","body":{"on_sale":true}}'
+semantius call crud postgrestRequest '{"method":"PATCH","path":"/products?category=eq.electronics","body":{"on_sale":true}}'
 ```
 
 Full reference: `references/crud-tools.md`

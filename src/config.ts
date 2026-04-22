@@ -1,5 +1,5 @@
 /**
- * semantius-cli Configuration Types and Loader
+ * semantius Configuration Types and Loader
  */
 
 import { existsSync } from 'node:fs';
@@ -262,7 +262,7 @@ export const DEFAULT_DAEMON_TIMEOUT_SECONDS = 60; // 60 seconds idle timeout
  */
 export function debug(message: string): void {
   if (process.env.MCP_DEBUG) {
-    console.error(`[semantius-cli] ${message}`);
+    console.error(`[semantius] ${message}`);
   }
 }
 
@@ -361,7 +361,7 @@ export function getSocketDir(): string {
   const uid = process.getuid?.() ?? 'unknown';
   // macOS uses /var/folders which is auto-cleaned, Linux uses /tmp
   const base = process.platform === 'darwin' ? '/tmp' : '/tmp';
-  return join(base, `semantius-cli-${uid}`);
+  return join(base, `semantius-${uid}`);
 }
 
 /**
@@ -434,7 +434,7 @@ function substituteEnvVars(value: string): string {
       );
     }
     // Non-strict mode: warn but continue
-    console.error(`[semantius-cli] Warning: ${message}`);
+    console.error(`[semantius] Warning: ${message}`);
   }
 
   return result;
@@ -561,7 +561,7 @@ export async function loadConfig(
   // Warn if no servers are configured
   if (Object.keys(config.mcpServers).length === 0) {
     console.error(
-      '[semantius-cli] Warning: No servers configured in mcpServers. Add server configurations to use MCP tools.',
+      '[semantius] Warning: No servers configured in mcpServers. Add server configurations to use MCP tools.',
     );
   }
 

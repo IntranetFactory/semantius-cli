@@ -1,5 +1,5 @@
 /**
- * semantius-cli Daemon - Background worker that maintains persistent MCP connections
+ * semantius Daemon - Background worker that maintains persistent MCP connections
  *
  * This is spawned as a detached process and manages a Unix socket for IPC.
  * It maintains the MCP server connection and forwards requests from CLI invocations.

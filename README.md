@@ -1,4 +1,4 @@
-# semantius-cli
+# semantius
 
 The official CLI for the [Semantius](https://semantius.com) platform. Connect to your Semantius organization's MCP servers to interact with your data, tools, and APIs directly from the command line or AI agents.
 
@@ -28,7 +28,7 @@ curl -fsSL https://raw.githubusercontent.com/IntranetFactory/semantius-cli/main/
 irm https://raw.githubusercontent.com/IntranetFactory/semantius-cli/main/install.ps1 | iex
 ```
 
-The Windows installer places `semantius-cli.exe` in `%LOCALAPPDATA%\Programs\Semantius` and adds it to your user PATH automatically.
+The Windows installer places `semantius.exe` in `%LOCALAPPDATA%\Programs\Semantius` and adds it to your user PATH automatically.
 
 ### 2. Set up credentials
 
@@ -50,31 +50,31 @@ The CLI automatically connects to your Semantius MCP servers (`crud` and `cube`)
 
 ```bash
 # List all servers and tools
-semantius-cli
+semantius
 
 # With descriptions
-semantius-cli -d
+semantius -d
 ```
 
 ### 4. Call a tool
 
 ```bash
 # View tool schema first
-semantius-cli info crud
+semantius info crud
 
 # Call a tool
-semantius-cli call crud list_records '{}'
+semantius call crud list_records '{}'
 ```
 
 ## Usage
 
 ```
-semantius-cli [options]                             List all servers and tools
-semantius-cli [options] info <server>               Show server tools and parameters
-semantius-cli [options] info <server> <tool>        Show tool schema
-semantius-cli [options] grep <pattern>              Search tools by glob pattern
-semantius-cli [options] call <server> <tool>        Call tool (reads JSON from stdin if no args)
-semantius-cli [options] call <server> <tool> <json> Call tool with JSON arguments
+semantius [options]                             List all servers and tools
+semantius [options] info <server>               Show server tools and parameters
+semantius [options] info <server> <tool>        Show tool schema
+semantius [options] grep <pattern>              Search tools by glob pattern
+semantius [options] call <server> <tool>        Call tool (reads JSON from stdin if no args)
+semantius [options] call <server> <tool> <json> Call tool with JSON arguments
 ```
 
 **Both formats work:** `info <server> <tool>` or `info <server>/<tool>`
@@ -105,7 +105,7 @@ semantius-cli [options] call <server> <tool> <json> Call tool with JSON argument
 
 ```bash
 # Basic listing
-$ semantius-cli
+$ semantius
 github
   • search_repositories
   • get_file_contents
@@ -116,7 +116,7 @@ filesystem
   • list_directory
 
 # With descriptions
-$ semantius-cli --with-descriptions
+$ semantius --with-descriptions
 github
   • search_repositories - Search for GitHub repositories
   • get_file_contents - Get contents of a file or directory
@@ -129,21 +129,21 @@ filesystem
 
 ```bash
 # Find file-related tools across all servers
-$ semantius-cli grep "*file*"
+$ semantius grep "*file*"
 github/get_file_contents
 github/create_or_update_file
 filesystem/read_file
 filesystem/write_file
 
 # Search with descriptions
-$ semantius-cli grep "*search*" -d
+$ semantius grep "*search*" -d
 github/search_repositories - Search for GitHub repositories
 ```
 
 #### View Server Details
 
 ```bash
-$ semantius-cli info github
+$ semantius info github
 Server: github
 Transport: stdio
 Command: npx -y @modelcontextprotocol/server-github
@@ -161,8 +161,8 @@ Tools (12):
 
 ```bash
 # Both formats work:
-$ semantius-cli info github search_repositories
-$ semantius-cli info github/search_repositories
+$ semantius info github search_repositories
+$ semantius info github/search_repositories
 
 Tool: search_repositories
 Server: github
@@ -185,13 +185,13 @@ Input Schema:
 
 ```bash
 # With inline JSON
-$ semantius-cli call github search_repositories '{"query": "mcp server", "per_page": 5}'
+$ semantius call github search_repositories '{"query": "mcp server", "per_page": 5}'
 
 # JSON output is default for call command
-$ semantius-cli call github search_repositories '{"query": "mcp"}' | jq '.content[0].text'
+$ semantius call github search_repositories '{"query": "mcp"}' | jq '.content[0].text'
 
 # Read JSON from stdin (no '-' needed!)
-$ echo '{"path": "./README.md"}' | semantius-cli call filesystem read_file
+$ echo '{"path": "./README.md"}' | semantius call filesystem read_file
 
 ```
 
@@ -201,15 +201,15 @@ For JSON arguments containing single quotes, special characters, or long text, u
 
 ```bash
 # Using a heredoc (no '-' needed with call subcommand)
-semantius-cli call server tool <<EOF
+semantius call server tool <<EOF
 {"content": "Text with 'single quotes' and \"double quotes\""}
 EOF
 
 # From a file
-cat args.json | semantius-cli call server tool
+cat args.json | semantius call server tool
 
 # Using jq to build complex JSON
-jq -n '{query: "mcp", filters: ["active", "starred"]}' | semantius-cli call github search
+jq -n '{query: "mcp", filters: ["active", "starred"]}' | semantius call github search
 ```
 
 **Why stdin?** Shell interpretation of `{}`, quotes, and special characters requires careful escaping. Stdin bypasses shell parsing entirely.
@@ -220,33 +220,33 @@ Chain multiple MCP calls together using pipes and shell tools:
 
 ```bash
 # 1. Search and read: Find files matching pattern, then read the first one
-semantius-cli call filesystem search_files '{"path": "src/", "pattern": "*.ts"}' \
+semantius call filesystem search_files '{"path": "src/", "pattern": "*.ts"}' \
   | jq -r '.content[0].text | split("\n")[0]' \
-  | xargs -I {} semantius-cli call filesystem read_file '{"path": "{}"}'
+  | xargs -I {} semantius call filesystem read_file '{"path": "{}"}'
 
 # 2. Process multiple results: Read all matching files
-semantius-cli call filesystem search_files '{"path": ".", "pattern": "*.md"}' \
+semantius call filesystem search_files '{"path": ".", "pattern": "*.md"}' \
   | jq -r '.content[0].text | split("\n")[]' \
   | while read file; do
       echo "=== $file ==="
-      semantius-cli call filesystem read_file "{\"path\": \"$file\"}" | jq -r '.content[0].text'
+      semantius call filesystem read_file "{\"path\": \"$file\"}" | jq -r '.content[0].text'
     done
 
 # 3. Extract and transform: Get repo info, extract URLs
-semantius-cli call github search_repositories '{"query": "mcp server", "per_page": 5}' \
+semantius call github search_repositories '{"query": "mcp server", "per_page": 5}' \
   | jq -r '.content[0].text | fromjson | .items[].html_url'
 
 # 4. Conditional execution: Check file exists before reading
-semantius-cli call filesystem list_directory '{"path": "."}' \
+semantius call filesystem list_directory '{"path": "."}' \
   | jq -e '.content[0].text | contains("README.md")' \
-  && semantius-cli call filesystem read_file '{"path": "./README.md"}'
+  && semantius call filesystem read_file '{"path": "./README.md"}'
 
 # 5. Save output to file
-semantius-cli call github get_file_contents '{"owner": "user", "repo": "project", "path": "src/main.ts"}' \
+semantius call github get_file_contents '{"owner": "user", "repo": "project", "path": "src/main.ts"}' \
   | jq -r '.content[0].text' > main.ts
 
 # 6. Error handling in scripts
-if result=$(semantius-cli call filesystem read_file '{"path": "./config.json"}' 2>/dev/null); then
+if result=$(semantius call filesystem read_file '{"path": "./config.json"}' 2>/dev/null); then
   echo "$result" | jq '.content[0].text | fromjson'
 else
   echo "File not found, using defaults"
@@ -254,8 +254,8 @@ fi
 
 # 7. Aggregate results from multiple servers
 {
-  semantius-cli call github search_repositories '{"query": "mcp", "per_page": 3}'
-  semantius-cli call filesystem list_directory '{"path": "./src"}'
+  semantius call github search_repositories '{"query": "mcp", "per_page": 3}'
+  semantius call filesystem list_directory '{"path": "./src"}'
 } | jq -s '.'
 ```
 
@@ -287,7 +287,7 @@ fi
 
 ## Using with AI Agents
 
-`semantius-cli` gives AI coding agents direct access to your Semantius platform's tools and data through the MCP protocol. The CLI approach is token-efficient — schemas are only fetched on demand.
+`semantius` gives AI coding agents direct access to your Semantius platform's tools and data through the MCP protocol. The CLI approach is token-efficient — schemas are only fetched on demand.
 
 ### Why CLI?
 
@@ -303,41 +303,41 @@ Add this to your AI agent's system prompt for direct CLI access:
 ````xml
 ## Semantius Platform
 
-You have access to the Semantius platform via the `semantius-cli` CLI.
+You have access to the Semantius platform via the `semantius` CLI.
 
 Commands:
 
 ```bash
-semantius-cli info                        # List all servers
-semantius-cli info <server>               # Show server tools  
-semantius-cli info <server> <tool>        # Get tool schema
-semantius-cli grep "<pattern>"            # Search tools
-semantius-cli call <server> <tool>        # Call tool (stdin auto-detected)
-semantius-cli call <server> <tool> '{}'   # Call with JSON args
+semantius info                        # List all servers
+semantius info <server>               # Show server tools  
+semantius info <server> <tool>        # Get tool schema
+semantius grep "<pattern>"            # Search tools
+semantius call <server> <tool>        # Call tool (stdin auto-detected)
+semantius call <server> <tool> '{}'   # Call with JSON args
 ```
 
 **Both formats work:** `info <server> <tool>` or `info <server>/<tool>`
 
 Workflow:
 
-1. **Discover**: `semantius-cli info` to see available servers
-2. **Inspect**: `semantius-cli info <server> <tool>` to get the schema
-3. **Execute**: `semantius-cli call <server> <tool> '{}'` with arguments
+1. **Discover**: `semantius info` to see available servers
+2. **Inspect**: `semantius info <server> <tool>` to get the schema
+3. **Execute**: `semantius call <server> <tool> '{}'` with arguments
 
 ### Examples
 
 ```bash
 # List available tools
-semantius-cli info crud
+semantius info crud
 
 # Call with inline JSON
-semantius-cli call crud list_records '{}'
+semantius call crud list_records '{}'
 
 # Pipe from stdin (no '-' needed)
-echo '{"id": "123"}' | semantius-cli call crud get_record
+echo '{"id": "123"}' | semantius call crud get_record
 
 # Heredoc for complex JSON
-semantius-cli call crud create_record <<EOF
+semantius call crud create_record <<EOF
 {"name": "My Record", "data": "value"}
 EOF
 ```
@@ -346,16 +346,16 @@ EOF
 
 | Wrong | Error | Fix |
 |-------|-------|-----|
-| `semantius-cli server tool` | AMBIGUOUS | Use `call server tool` |
-| `semantius-cli run server tool` | UNKNOWN_SUBCOMMAND | Use `call` |
-| `semantius-cli list` | UNKNOWN_SUBCOMMAND | Use `info` |
+| `semantius server tool` | AMBIGUOUS | Use `call server tool` |
+| `semantius run server tool` | UNKNOWN_SUBCOMMAND | Use `call` |
+| `semantius list` | UNKNOWN_SUBCOMMAND | Use `info` |
 ````
 
 ### Option 2: Agents Skill
 
-For Code Agents that support Agents Skills, like Gemini CLI, OpenCode or Claude Code, you can use the semantius-cli skill. The Skill is available at [SKILL.md](./SKILL.md)
+For Code Agents that support Agents Skills, like Gemini CLI, OpenCode or Claude Code, you can use the semantius skill. The Skill is available at [SKILL.md](./SKILL.md)
 
-Create `semantius-cli/SKILL.md` in your skills directory.
+Create `semantius/SKILL.md` in your skills directory.
 
 ## Architecture
 
@@ -366,12 +366,12 @@ By default, the CLI uses **lazy-spawn connection pooling** to avoid repeated MCP
 ```
 ┌────────────────────────────────────────────────────────────────────┐
 │                        First CLI Call                              │
-│   $ semantius-cli info server                                            │
+│   $ semantius info server                                            │
 └────────────────────────────────────────────────────────────────────┘
                                │
                                ▼
 ┌────────────────────────────────────────────────────────────────────┐
-│ Check: /tmp/semantius-cli-{uid}/server.sock exists?                      │
+│ Check: /tmp/semantius-{uid}/server.sock exists?                      │
 └────────────────────────────────────────────────────────────────────┘
          │                                    │
          │ NO                                 │ YES
@@ -398,9 +398,9 @@ By default, the CLI uses **lazy-spawn connection pooling** to avoid repeated MCP
 
 **Control via environment:**
 ```bash
-MCP_NO_DAEMON=1 semantius-cli info      # Force fresh connection
-MCP_DAEMON_TIMEOUT=120 semantius-cli    # 2 minute idle timeout
-MCP_DEBUG=1 semantius-cli info          # See daemon debug output
+MCP_NO_DAEMON=1 semantius info      # Force fresh connection
+MCP_DAEMON_TIMEOUT=120 semantius    # 2 minute idle timeout
+MCP_DEBUG=1 semantius info          # See daemon debug output
 ```
 
 ### Connection Model (Direct)
@@ -416,7 +416,7 @@ When daemon is disabled (`MCP_NO_DAEMON=1`), the CLI uses a **lazy, on-demand co
               │                 │                 │
               ▼                 ▼                 ▼
     ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-    │   semantius-cli info  │ │ semantius-cli grep    │ │ semantius-cli call    │
+    │   semantius info  │ │ semantius grep    │ │ semantius call    │
     │   (list all)    │ │   "*pattern*"   │ │  server tool {} │
     └─────────────────┘ └─────────────────┘ └─────────────────┘
               │                 │                 │
@@ -439,11 +439,11 @@ When daemon is disabled (`MCP_NO_DAEMON=1`), the CLI uses a **lazy, on-demand co
 
 | Command | Servers Connected |
 |---------|-------------------|
-| `semantius-cli info` | All N servers in parallel |
-| `semantius-cli grep "*pattern*"` | All N servers in parallel |
-| `semantius-cli info <server>` | Only the specified server |
-| `semantius-cli info <server> <tool>` | Only the specified server |
-| `semantius-cli call <server> <tool> '{}'` | Only the specified server |
+| `semantius info` | All N servers in parallel |
+| `semantius grep "*pattern*"` | All N servers in parallel |
+| `semantius info <server>` | Only the specified server |
+| `semantius info <server> <tool>` | Only the specified server |
+| `semantius call <server> <tool> '{}'` | Only the specified server |
 
 
 ### Error Handling & Retry
@@ -470,7 +470,7 @@ The CLI includes **automatic retry with exponential backoff** for transient fail
 
 ```bash
 git clone https://github.com/IntranetFactory/semantius-cli.git
-cd semantius-cli
+cd semantius
 bun install
 ```
 
@@ -511,9 +511,9 @@ Test the CLI locally without compiling by using `bun link`:
 # Link the package globally (run once)
 bun link
 
-# Now you can use 'semantius-cli' anywhere
-semantius-cli --help
-semantius-cli info crud
+# Now you can use 'semantius' anywhere
+semantius --help
+semantius info crud
 
 # Or run directly during development
 bun run dev --help
@@ -540,20 +540,20 @@ All errors include actionable recovery suggestions, optimized for both humans an
 
 ```
 Error [AMBIGUOUS_COMMAND]: Ambiguous command: did you mean to call a tool or view info?
-  Details: Received: semantius-cli filesystem read_file
-  Suggestion: Use 'semantius-cli call filesystem read_file' to execute, or 'semantius-cli info filesystem read_file' to view schema
+  Details: Received: semantius filesystem read_file
+  Suggestion: Use 'semantius call filesystem read_file' to execute, or 'semantius info filesystem read_file' to view schema
 
 Error [UNKNOWN_SUBCOMMAND]: Unknown subcommand: "run"
   Details: Valid subcommands: info, grep, call
-  Suggestion: Did you mean 'semantius-cli call'?
+  Suggestion: Did you mean 'semantius call'?
 
 Error [SERVER_NOT_FOUND]: Server "github" not found in config
   Details: Available servers: filesystem, sqlite
-  Suggestion: Use one of: semantius-cli info filesystem, semantius-cli info sqlite
+  Suggestion: Use one of: semantius info filesystem, semantius info sqlite
 
 Error [TOOL_NOT_FOUND]: Tool "search" not found in server "filesystem"
   Details: Available tools: read_file, write_file, list_directory (+5 more)
-  Suggestion: Run 'semantius-cli info filesystem' to see all available tools
+  Suggestion: Run 'semantius info filesystem' to see all available tools
 
 Error [INVALID_JSON_ARGUMENTS]: Invalid JSON in tool arguments
   Details: Parse error: Unexpected identifier "test"
