@@ -17,8 +17,8 @@ When importing many records from a CSV, Excel, or TXT file, use the webhook-base
 ## Step 1 — Identify Target Entity and Fields
 
 ```bash
-semantius-cli call crud read_entity '{"filters": "table_name=eq.<table_name>"}'
-semantius-cli call crud read_field '{"filters": "table_name=eq.<table_name>"}'
+semantius call crud read_entity '{"filters": "table_name=eq.<table_name>"}'
+semantius call crud read_field '{"filters": "table_name=eq.<table_name>"}'
 ```
 
 Note which fields have `input_type: "readonly"` — **never import into those**.
@@ -28,13 +28,13 @@ Note which fields have `input_type: "readonly"` — **never import into those**.
 ## Step 2 — Find or Create Webhook Receiver
 
 ```bash
-semantius-cli call crud read_webhook_receiver \
+semantius call crud read_webhook_receiver \
   '{"filters": "label=eq.Agent Import&table_name=eq.<table_name>"}'
 ```
 
 If not found, create one:
 ```bash
-semantius-cli call crud create_webhook_receiver '{
+semantius call crud create_webhook_receiver '{
   "data": {
     "label": "Agent Import",
     "table_name": "<table_name>",
@@ -49,7 +49,7 @@ semantius-cli call crud create_webhook_receiver '{
 ## Step 3 — Get API Base URL
 
 ```bash
-semantius-cli call crud getCurrentUser '{}'
+semantius call crud getCurrentUser '{}'
 # Extract api_baseurl from response
 # Endpoint: {api_baseurl}/hook/{webhook_receiver_id}
 ```
@@ -345,7 +345,7 @@ for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True), 1):
 ## Monitoring After Import
 
 ```bash
-semantius-cli call crud read_webhook_receiver_log '{
+semantius call crud read_webhook_receiver_log '{
   "filters": "receiver_id=eq.<receiver_id>",
   "order": "created_at.desc",
   "limit": 20

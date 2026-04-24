@@ -1,7 +1,7 @@
 ---
-name: semantius
+name: use-semantius
 description: >-
-  Use this skill for anything involving the Semantius platform via semantius.
+  Use this skill for anything involving the Semantius platform via the semantius CLI.
   Trigger when the user wants to: create, read, update, or delete entities,
   fields, modules, permissions, roles, users, or business records; build or query
   a semantic data model; set up RBAC; insert or import data into Semantius
@@ -9,7 +9,7 @@ description: >-
   writing shell scripts or Bun scripts that chain semantius commands.
 ---
 
-# semantius Skill
+# use-semantius Skill
 
 **Semantius** is a low-code platform that lets you define a semantic data model — entities, fields, relationships, and access rules — and instantly get a fully managed PostgreSQL database with a REST API, auto-generated UI, and an analytics layer behind it. You define *what* your data looks like (Layer 1), and Semantius handles storage, querying (Layer 2), and cross-table analytics (Layer 3).
 

@@ -64,6 +64,7 @@ For each entity, repeat the following sub-structure.
 
 **Plural label:** {{Plural Label}}
 **Label column:** `{{field_name_used_as_label}}`  _(the human-identifying field; auto-wired by Semantius)_
+**Audit log:** {{yes | no}}  _(optional; defaults to no. Set yes when INSERT/UPDATE/DELETE history matters — contracts, financial records, policy data, anything subject to compliance or dispute. Leave no for high-volume/ephemeral data where audit noise outweighs the value.)_
 **Description:** {{1-2 sentence description of what a record represents and when it's created}}
 
 **Fields**
@@ -125,12 +126,13 @@ Questions about extensibility or scope that are **fine to leave open**. These ca
 
 A short checklist for the agent who will materialise this model in Semantius (or equivalent):
 
-1. Create one module named `{{module_slug}}` and two baseline permissions (`{{module_slug}}:read`, `{{module_slug}}:manage`) before any entity.
+1. Create one module named `{{system_slug}}` (the module name **must** equal the `system_slug` from the front-matter — do not invent a different module slug here) and two baseline permissions (`{{system_slug}}:read`, `{{system_slug}}:manage`) before any entity.
 2. Create entities in the order given in §2 — entities referenced by others first.
 3. For each entity: set `label_column` to the snake_case field marked as label in §3, pass `module_id`, `view_permission`, `edit_permission`. Do **not** manually create `id`, `created_at`, `updated_at`, or the auto-label field.
-4. For each field in §3: pass `table_name`, `field_name`, `format`, `title` (the Label column), `is_nullable` (inverse of Required), and for `reference`/`parent` fields also `reference_table` and a `reference_delete_mode` consistent with §4.
-5. **Deduplicate against Semantius built-in tables.** This model is self-contained and may declare entities (e.g. `users`, `roles`, `permissions`) that already exist in Semantius as built-ins. For each declared entity, read Semantius first: if a built-in already covers it, **skip the create** and reuse the built-in as the `reference_table` target — do not attempt to recreate. Optionally add missing fields to the built-in only if the model requires them (additive, low-risk changes only).
-6. After creation, spot-check that `label_column` on each entity resolves to a real field and that all `reference_table` targets exist.
+4. For each field in §3: pass `table_name`, `field_name`, `format`, `title` (the Label column), and for `reference`/`parent` fields also `reference_table` and a `reference_delete_mode` consistent with §4. (The §3 `Required` column is analyst intent; the platform manages nullability internally and does not need a per-field flag.)
+5. **Fix up each entity's auto-created label-column field title.** `create_entity` auto-creates a field whose `field_name` equals the entity's `label_column`, and its `title` defaults to `singular_label` (e.g. entity `vendors` with `singular_label: "Vendor"` and `label_column: "vendor_name"` yields an auto-field `vendors.vendor_name` with title `"Vendor"`). If the §3 field table specifies a different Label for the label_column row (e.g. `"Vendor Name"` instead of `"Vendor"`), follow up with `update_field` to set the correct title. The `update_field` `id` is the **composite string** `"{table_name}.{field_name}"` (e.g. `"vendors.vendor_name"`) — **pass it as a string, not an integer**, or the update will fail.
+6. **Deduplicate against Semantius built-in tables.** This model is self-contained and may declare entities (e.g. `users`, `roles`, `permissions`) that already exist in Semantius as built-ins. For each declared entity, read Semantius first: if a built-in already covers it, **skip the create** and reuse the built-in as the `reference_table` target — do not attempt to recreate. Optionally add missing fields to the built-in only if the model requires them (additive, low-risk changes only).
+7. After creation, spot-check that `label_column` on each entity resolves to a real field and that all `reference_table` targets exist.
 ```
 
 ## Template ends above this line
@@ -144,6 +146,8 @@ A short checklist for the agent who will materialise this model in Semantius (or
 - If a field is a reference, always put the arrow + target + cardinality in the "Reference / Notes" column, e.g. `→ accounts (N:1)`. If it's a parent (ownership), use `↳ accounts (N:1, cascade)` so the distinction is visible.
 - The §2 Mermaid diagram is **required** — it must list every entity in the summary table and every relationship in §4. Regenerate it whenever entities or relationships change.
 - Keep the "Open questions" section and both severity sub-sections (§6.1 Decisions needed, §6.2 Future considerations) even when empty — write "None." under an empty bucket. Every entry is a forward-looking question; decision-log prose ("X was folded into Y") does not belong here. The semantic-model-deployer skill uses §6.1 as a gate — any unresolved 🔴 item blocks deployment.
+- **§7 module name must equal `system_slug`.** The frontmatter `system_slug` is the single source of truth for the module identifier. Do not introduce a second name like `{domain}_spend` or `{domain}_tracker` in §7 — if the frontmatter says `acme_crm`, §7 step 1 must read "Create one module named `acme_crm` …" and the permissions must be `acme_crm:read` / `acme_crm:manage`. A divergence between frontmatter and §7 is a blocker: the downstream deployer sees two authoritative sources and cannot pick silently.
+- **§7 must explain the label-column title fixup.** After `create_entity`, Semantius auto-creates a field named `<label_column>` with its `title` defaulting to `singular_label`. If any entity's §3 field table specifies a Label for the label_column row that differs from `singular_label` (e.g. `singular_label: "Vendor"` but §3 Label `"Vendor Name"`), §7 step 5 must explicitly instruct the implementer to call `update_field` with the composite string id (`"{table_name}.{field_name}"`, passed as a **string** not an integer) to set the correct title. Do not silently harmonise labels to avoid the fixup — `singular_label` stays a bare singular for plural/singular symmetry, and field-level titles live on the field.
 - The front-matter is YAML — every value must be quoted if it contains a colon.
 - `initial_request` is **immutable**. It captures the user's verbatim opening ask from the Create session. Audit and Extend modes must preserve it exactly — never rewrite, summarize, tidy, or "improve" it, even if the wording is rough or the scope has since expanded. It's a historical record of the original intent, not a live scope statement. Use a YAML literal block (`|`) so newlines and punctuation survive round-trips.
 - If the system has no enums, §5 can read "No enumerations defined." — don't omit the section; keeping section numbers stable helps humans navigate multiple models.

@@ -1,5 +1,5 @@
 [
-  {"query": "I need to create a new module for tracking our support tickets, with fields for subject, description, priority, and status. How do I set this up using semantius-cli?", "should_trigger": true},
+  {"query": "I need to create a new module for tracking our support tickets, with fields for subject, description, priority, and status. How do I set this up using semantius?", "should_trigger": true},
   {"query": "ok so my boss just sent me this xlsx file (its in my downloads, called something like 'Q4 sales final FINAL v2.xlsx') and she wants me to add a column that shows the profit margin as a percentage. The revenue is in column C and costs are in column D i think. she wants me to upload this to our semantius db", "should_trigger": false},
   {"query": "Create a junction table for enrollments linking students and courses. Already have both entities.", "should_trigger": true},
   {"query": "Write me the CRUD operations for a products API using Express and PostgreSQL", "should_trigger": false},

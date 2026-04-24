@@ -34,7 +34,7 @@ Never use free-form names like `"can_edit"` or `"admin"` — always scope to a m
 
 ```bash
 # Baseline: always create both read and manage
-semantius-cli call crud create_permission '{
+semantius call crud create_permission '{
   "data": {
     "permission_name": "crm:read",
     "description": "Read CRM data",
@@ -42,7 +42,7 @@ semantius-cli call crud create_permission '{
   }
 }'
 
-semantius-cli call crud create_permission '{
+semantius call crud create_permission '{
   "data": {
     "permission_name": "crm:manage",
     "description": "Create, update, and delete CRM data",
@@ -56,7 +56,7 @@ semantius-cli call crud create_permission '{
 Make `crm:manage` implicitly include `crm:read`, so assigning `manage` is sufficient:
 
 ```bash
-semantius-cli call crud create_permission_hierarchy '{
+semantius call crud create_permission_hierarchy '{
   "data": {
     "parent_permission_id": <crm:manage id>,
     "child_permission_id": <crm:read id>
@@ -68,7 +68,7 @@ semantius-cli call crud create_permission_hierarchy '{
 
 ```bash
 # Viewer role — read only
-semantius-cli call crud create_role '{
+semantius call crud create_role '{
   "data": {
     "name": "crm_viewer",
     "label": "CRM Viewer",
@@ -78,7 +78,7 @@ semantius-cli call crud create_role '{
 }'
 
 # Manager role — full access
-semantius-cli call crud create_role '{
+semantius call crud create_role '{
   "data": {
     "name": "crm_manager",
     "label": "CRM Manager",
@@ -92,7 +92,7 @@ semantius-cli call crud create_role '{
 
 ```bash
 # Grant crm:read to crm_viewer
-semantius-cli call crud create_role_permission '{
+semantius call crud create_role_permission '{
   "data": {
     "role_id": <crm_viewer id>,
     "permission_id": <crm:read id>
@@ -100,7 +100,7 @@ semantius-cli call crud create_role_permission '{
 }'
 
 # Grant crm:manage to crm_manager (inherits crm:read via hierarchy)
-semantius-cli call crud create_role_permission '{
+semantius call crud create_role_permission '{
   "data": {
     "role_id": <crm_manager id>,
     "permission_id": <crm:manage id>
@@ -112,10 +112,10 @@ semantius-cli call crud create_role_permission '{
 
 ```bash
 # Find the user first
-semantius-cli call crud read_user '{"filters": "email=eq.alice@example.com"}'
+semantius call crud read_user '{"filters": "email=eq.alice@example.com"}'
 
 # Assign role
-semantius-cli call crud create_user_role '{
+semantius call crud create_user_role '{
   "data": {
     "user_id": <user id>,
     "role_id": <crm_manager id>
@@ -129,22 +129,22 @@ semantius-cli call crud create_user_role '{
 
 ```bash
 # All permissions
-semantius-cli call crud read_permission '{}'
+semantius call crud read_permission '{}'
 
 # Permissions for a specific module
-semantius-cli call crud read_permission '{"filters": "name=ilike.crm:*"}'
+semantius call crud read_permission '{"filters": "name=ilike.crm:*"}'
 
 # All roles
-semantius-cli call crud read_role '{}'
+semantius call crud read_role '{}'
 
 # What permissions does a role have?
-semantius-cli call crud read_role_permission '{"filters": "role_id=eq.<id>"}'
+semantius call crud read_role_permission '{"filters": "role_id=eq.<id>"}'
 
 # What roles does a user have?
-semantius-cli call crud read_user_role '{"filters": "user_id=eq.<id>"}'
+semantius call crud read_user_role '{"filters": "user_id=eq.<id>"}'
 
 # Current user's full profile + effective permissions
-semantius-cli call crud getCurrentUser '{}'
+semantius call crud getCurrentUser '{}'
 ```
 
 ---
@@ -155,12 +155,12 @@ When a user gets "permission denied":
 
 1. **Get their effective permissions:**
    ```bash
-   semantius-cli call crud getCurrentUser '{}'
+   semantius call crud getCurrentUser '{}'
    ```
 
 2. **Check what the entity requires:**
    ```bash
-   semantius-cli call crud read_entity '{"filters": "table_name=eq.<table>"}'
+   semantius call crud read_entity '{"filters": "table_name=eq.<table>"}'
    # Look at view_permission and edit_permission
    ```
 
@@ -179,7 +179,7 @@ When a user gets "permission denied":
 
 ### Add a permission to an existing role
 ```bash
-semantius-cli call crud create_role_permission '{
+semantius call crud create_role_permission '{
   "data": {"role_id": 5, "permission_id": 12}
 }'
 ```
@@ -187,16 +187,16 @@ semantius-cli call crud create_role_permission '{
 ### Remove a permission from a role
 ```bash
 # Find the role_permission record first
-semantius-cli call crud read_role_permission '{"filters": "role_id=eq.5&permission_id=eq.12"}'
+semantius call crud read_role_permission '{"filters": "role_id=eq.5&permission_id=eq.12"}'
 # Then delete by id
-semantius-cli call crud delete_role_permission '{"id": "<id>"}'
+semantius call crud delete_role_permission '{"id": "<id>"}'
 ```
 
 > ⚠️ Removing permissions from roles may revoke access for all users in that role. Check impact before proceeding.
 
 ### Update entity-level permission gates
 ```bash
-semantius-cli call crud update_entity '{
+semantius call crud update_entity '{
   "table_name": "products",
   "data": {
     "view_permission": "catalog:read",

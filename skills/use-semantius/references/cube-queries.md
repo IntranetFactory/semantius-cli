@@ -30,9 +30,9 @@ For simple single-table reads — filtering one table, fetching a record by ID �
 
 ```bash
 # Step 1 — always first, supports optional filtering
-semantius-cli call cube discover '{}'
+semantius call cube discover '{}'
 # Or narrow by topic/intent:
-semantius-cli call cube discover '{"topic": "sales", "intent": "analyze revenue trends", "limit": 10, "minScore": 0.1}'
+semantius call cube discover '{"topic": "sales", "intent": "analyze revenue trends", "limit": 10, "minScore": 0.1}'
 ```
 
 **`discover` returns three things — read all before querying:**
@@ -42,11 +42,11 @@ semantius-cli call cube discover '{"topic": "sales", "intent": "analyze revenue 
 
 ```bash
 # Step 2 — optional: validate auto-corrects field names and returns generated SQL
-semantius-cli call cube validate '{"query": {"measures": ["Sales.count"], "dimensions": ["Products.category"]}}'
+semantius call cube validate '{"query": {"measures": ["Sales.count"], "dimensions": ["Products.category"]}}'
 # Returns: corrected query + SQL for debugging
 
 # Step 3 — execute
-semantius-cli call cube load '{"query": {"measures": ["Sales.count"], "dimensions": ["Products.category"]}}'
+semantius call cube load '{"query": {"measures": ["Sales.count"], "dimensions": ["Products.category"]}}'
 ```
 
 ---
@@ -74,7 +74,7 @@ This is the most common source of incorrect queries.
 
 ```bash
 # ✅ CORRECT: Aggregated total — use filters
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "measures": ["Sales.revenue"],
     "filters": [{"member": "Sales.createdAt", "operator": "inDateRange", "values": ["last 6 months"]}]
@@ -82,7 +82,7 @@ semantius-cli call cube load '{
 }'
 
 # ✅ CORRECT: Time series by month — use timeDimensions with granularity
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "measures": ["Sales.revenue"],
     "timeDimensions": [{"dimension": "Sales.createdAt", "dateRange": "last 6 months", "granularity": "month"}]
@@ -90,7 +90,7 @@ semantius-cli call cube load '{
 }'
 
 # ❌ WRONG: timeDimensions without granularity returns daily rows
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "measures": ["Sales.revenue"],
     "timeDimensions": [{"dimension": "Sales.createdAt", "dateRange": "last 6 months"}]
@@ -138,7 +138,7 @@ Always read the `dateFilteringGuide` returned by `discover` — it is the author
 ### Period-over-Period Comparison Example
 
 ```bash
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "measures": ["Sales.revenue"],
     "timeDimensions": [{
@@ -186,7 +186,7 @@ The `joins` property in each `discover` result lists related cubes. Include dime
 ```bash
 # Discover shows: Productivity joins to Employees
 # So you can mix fields freely:
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "measures": ["Productivity.totalPullRequests"],
     "dimensions": ["Employees.name", "Employees.department"]
@@ -201,7 +201,7 @@ semantius-cli call cube load '{
 ### Funnel Analysis
 
 ```bash
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "funnel": {
       "bindingKey": "Events.userId",
@@ -218,7 +218,7 @@ semantius-cli call cube load '{
 ### Flow / Path Analysis
 
 ```bash
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "flow": {
       "bindingKey": "Events.userId",
@@ -235,7 +235,7 @@ semantius-cli call cube load '{
 ### Retention Analysis
 
 ```bash
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "retention": {
       "bindingKey": "Events.userId",

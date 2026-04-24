@@ -1,4 +1,4 @@
-# Evals for semantius-cli skill
+# Evals for use-semantius skill
 
 ## What these are
 
@@ -41,16 +41,16 @@ Unzip the `.skill` file directly into your personal Claude Code skills folder:
 
 ```bash
 # On macOS/Linux
-unzip semantius-cli.skill -d ~/.claude/skills/
+unzip use-semantius.skill -d ~/.claude/skills/
 
 # On Windows (PowerShell)
-Expand-Archive semantius-cli.skill -DestinationPath "$env:USERPROFILE\.claude\skills\"
+Expand-Archive use-semantius.skill -DestinationPath "$env:USERPROFILE\.claude\skills\"
 ```
 
 Verify it landed correctly — you should see:
 ```
 ~/.claude/skills/
-└── semantius-cli/
+└── use-semantius/
     ├── SKILL.md
     └── references/
         ├── cli-usage.md
@@ -96,7 +96,7 @@ npm install -g @anthropic-ai/claude-code
 ### Step 2: Install the skill-creator skill
 
 Get `skill-creator.skill` from the Claude.ai skill library (same place you got
-`semantius-cli.skill`), then:
+`use-semantius.skill`), then:
 
 ```bash
 unzip skill-creator.skill -d ~/.claude/skills/
@@ -105,7 +105,7 @@ unzip skill-creator.skill -d ~/.claude/skills/
 ### Step 3: Run the evals
 
 ```bash
-bash skills/semantius-cli/evals/run-evals.sh
+bash skills/use-semantius/evals/run-evals.sh
 ```
 
 This spawns a `claude -p` subprocess per eval (with-skill vs without-skill in
@@ -129,8 +129,8 @@ Once evals look good, run the description optimizer to maximize trigger accuracy
 cd ~/.claude/skills/skill-creator
 
 python -m scripts.run_loop \
-  --skill-path ~/.claude/skills/semantius-cli \
-  --eval-set ~/.claude/skills/semantius-cli/evals/evals.json \
+  --skill-path ~/.claude/skills/use-semantius \
+  --eval-set ~/.claude/skills/use-semantius/evals/evals.json \
   --model claude-sonnet-4-20250514 \
   --max-iterations 5
 ```
@@ -148,4 +148,4 @@ Good candidates:
 - `refresh_schema_cache` after adding a field
 - `compareDateRange` period-over-period comparison in cube
 - Funnel or retention analysis
-- Safe entity evolution (adding nullable fields, warning on risky changes)
+- Safe entity evolution (adding new fields, warning on risky changes)

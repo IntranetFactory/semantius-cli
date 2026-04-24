@@ -2,7 +2,7 @@
 name: semantic-model-optimizer
 description: >-
   Reverse-engineers a `*-semantic-model.md` file from a live Semantius module —
-  reads the module's entities, fields, and enum values via `semantius-cli`,
+  reads the module's entities, fields, and enum values via `semantius`,
   pulls in any related tables referenced from other modules or Semantius
   built-ins (e.g. `users`, `departments`) so the output is self-contained, and
   writes a file byte-compatible with the template used by the
@@ -30,7 +30,7 @@ The `.md` file this skill produces is **interchangeable with one produced by the
 ## Division of responsibility
 
 - **This skill** owns the workflow: picking the module, reading its state, discovering related tables in other modules, transforming live state into the markdown template, and (opt-in) suggesting optimizations.
-- **The `semantius-cli` skill** owns the execution: every read is a `semantius-cli` call.
+- **The `use-semantius` skill** owns the execution: every read is a `semantius` call.
 - **This skill is read-only against Semantius.** It never writes to the platform. Any fixes suggested in Stage 5 are applied to the `.md` file only — a re-deploy via the `semantic-model-deployer` skill is how changes make it back to Semantius.
 
 ---
@@ -39,8 +39,8 @@ The `.md` file this skill produces is **interchangeable with one produced by the
 
 Read these first:
 
-- `<skills-root>/semantius-cli/SKILL.md`
-- `<skills-root>/semantius-cli/references/data-modeling.md` — authoritative list of Semantius built-ins and platform constraints
+- `<skills-root>/use-semantius/SKILL.md`
+- `<skills-root>/use-semantius/references/data-modeling.md` — authoritative list of Semantius built-ins and platform constraints
 - `<skills-root>/semantic-model-analyst/references/semantic-model-template.md` — the output template; the `.md` must match it exactly
 - `<skills-root>/semantic-model-analyst/SKILL.md` Mode B audit checklist — reused in Stage 5
 
@@ -61,7 +61,7 @@ Narrate what you're doing at each step.
 If the user named a module, resolve it directly with `read_module`. Otherwise list all modules:
 
 ```bash
-semantius-cli call crud read_module '{"order": "module_name.asc"}'
+semantius call crud read_module '{"order": "module_name.asc"}'
 ```
 
 Present the list as a compact table (`module_name`, `label`, short description). Ask the user which module to extract. Do not guess when multiple candidates match — ask.
@@ -76,20 +76,20 @@ Pull the full schema:
 
 ```bash
 # Module already resolved above; re-read only if you need the exact row
-semantius-cli call crud read_module '{"filters": "module_name=eq.<slug>"}'
+semantius call crud read_module '{"filters": "module_name=eq.<slug>"}'
 
 # Entities belonging to this module, in creation order
-semantius-cli call crud read_entity '{"filters": "module_id=eq.<id>", "order": "created_at.asc"}'
+semantius call crud read_entity '{"filters": "module_id=eq.<id>", "order": "created_at.asc"}'
 
 # Fields — read the whole catalog once and filter client-side; cheaper than N reads
-semantius-cli call crud read_field '{}'
+semantius call crud read_field '{}'
 ```
 
 Build in memory:
 
 - **module** — `module_name`, `label`, `description`
-- **entities[]** — each with `table_name`, `singular`, `plural`, `singular_label`, `plural_label`, `description`, `label_column`, `module_id`
-- **fields_by_table** — map keyed by `table_name`, per field: `field_name`, `format`, `title`, `description`, `is_nullable`, `unique_value`, `reference_table`, `reference_delete_mode`, `enum_values`, `ctype`, `field_order`, `searchable`
+- **entities[]** — each with `table_name`, `singular`, `plural`, `singular_label`, `plural_label`, `description`, `label_column`, `audit_log`, `module_id`
+- **fields_by_table** — map keyed by `table_name`, per field: `field_name`, `format`, `title`, `description`, `unique_value`, `reference_table`, `reference_delete_mode`, `enum_values`, `ctype`, `field_order`, `searchable`
 
 **Strip auto-generated fields** before rendering. Do not render these in §3:
 
@@ -113,13 +113,13 @@ Walk every field in our module's entities where `reference_table` is non-empty. 
 
 - **Target is in our own module** → already included; skip.
 - **Target is in a different module** → add to a `related_entities[]` list and pull it in.
-- **Target is a Semantius built-in** (`users`, `roles`, `permissions`, `permission_hierarchy`, `role_permissions`, `user_roles`, `webhook_receivers`, `webhook_receiver_logs`, `modules`, `entities`, `fields` — see `semantius-cli/references/data-modeling.md` for the authoritative list) → add to `related_entities[]` and pull it in. Built-ins are included as normal §3 entities; the `semantic-model-deployer` skill deduplicates them at deploy-time.
+- **Target is a Semantius built-in** (`users`, `roles`, `permissions`, `permission_hierarchy`, `role_permissions`, `user_roles`, `webhook_receivers`, `webhook_receiver_logs`, `modules`, `entities`, `fields` — see `use-semantius/references/data-modeling.md` for the authoritative list) → add to `related_entities[]` and pull it in. Built-ins are included as normal §3 entities; the `semantic-model-deployer` skill deduplicates them at deploy-time.
 
 For each related table:
 
 ```bash
-semantius-cli call crud read_entity '{"filters": "table_name=eq.<name>"}'
-semantius-cli call crud read_field '{"filters": "table_name=eq.<name>"}'
+semantius call crud read_entity '{"filters": "table_name=eq.<name>"}'
+semantius call crud read_field '{"filters": "table_name=eq.<name>"}'
 ```
 
 Apply the same auto-field stripping from Stage 2.
@@ -148,9 +148,10 @@ Follow `semantic-model-analyst/references/semantic-model-template.md` verbatim. 
 | `entity.plural_label` | §3 Plural label line |
 | `entity.description` | §3 Description |
 | `entity.label_column` | §3 Label column |
+| `entity.audit_log` | §3 `**Audit log:** yes \| no` line — render `yes` when `true`, `no` when `false`/null |
 | `field.field_name` | §3 Field name |
 | `field.format` | §3 Format (the live value is already from the analyst's vocabulary) |
-| `field.is_nullable` | §3 Required (`no` when nullable, `yes` when not) |
+| (inferred) | §3 Required — the platform manages nullability internally and does not expose a per-field flag. Infer: `format: parent` → `yes`; `format: reference` → `no`; other formats default to `yes`. |
 | `field.title` | §3 Label |
 | `field.reference_table` + `reference_delete_mode` | §3 Reference / Notes + §4 summary row |
 | `field.enum_values` | §3 Notes (`values listed in §5.N`) and a §5 sub-section |
@@ -195,7 +196,7 @@ At Stage 4, do exactly this — no broader search:
 
 One row per FK field. Cardinality at the FK side is always N:1 in Semantius. The 1:N / M:N / 1:1 views are inferred from the direction.
 
-Detect junctions: an entity whose fields (after auto-field stripping and after the `label_column` row) are exactly two `parent` FKs (both `is_nullable: false`) is a junction. Mark those rows `parent (junction)` in §4 Kind.
+Detect junctions: an entity whose fields (after auto-field stripping and after the `label_column` row) are exactly two `parent` FKs is a junction. Mark those rows `parent (junction)` in §4 Kind.
 
 ### §2 Mermaid flowchart
 

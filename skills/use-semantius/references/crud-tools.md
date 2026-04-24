@@ -41,34 +41,34 @@ Direct HTTP request against the PostgREST API. Works on **any table** — both S
 **Business data examples (your entity tables):**
 ```bash
 # Read all active products
-semantius-cli call crud postgrestRequest '{"method":"GET","path":"/products?status=eq.active&order=name.asc"}'
+semantius call crud postgrestRequest '{"method":"GET","path":"/products?status=eq.active&order=name.asc"}'
 
 # Read with column selection and pagination
-semantius-cli call crud postgrestRequest '{"method":"GET","path":"/orders?select=id,total,status&limit=20&offset=0"}'
+semantius call crud postgrestRequest '{"method":"GET","path":"/orders?select=id,total,status&limit=20&offset=0"}'
 
 # Insert a new record
-semantius-cli call crud postgrestRequest '{"method":"POST","path":"/contacts","body":{"first_name":"Alice","email":"alice@example.com","company_id":5}}'
+semantius call crud postgrestRequest '{"method":"POST","path":"/contacts","body":{"first_name":"Alice","email":"alice@example.com","company_id":5}}'
 
 # Update matching records (bulk)
-semantius-cli call crud postgrestRequest '{"method":"PATCH","path":"/products?category=eq.electronics","body":{"on_sale":true}}'
+semantius call crud postgrestRequest '{"method":"PATCH","path":"/products?category=eq.electronics","body":{"on_sale":true}}'
 
 # Delete a specific record
-semantius-cli call crud postgrestRequest '{"method":"DELETE","path":"/orders?id=eq.42"}'
+semantius call crud postgrestRequest '{"method":"DELETE","path":"/orders?id=eq.42"}'
 
 # Full-text search on a searchable entity
-semantius-cli call crud postgrestRequest '{"method":"GET","path":"/contacts?search_vector=wfts.Monica"}'
+semantius call crud postgrestRequest '{"method":"GET","path":"/contacts?search_vector=wfts.Monica"}'
 
 # Complex filter: multiple conditions + ordering + pagination
-semantius-cli call crud postgrestRequest '{"method":"GET","path":"/orders?status=eq.pending&total=gte.100&order=created_at.desc&limit=50"}'
+semantius call crud postgrestRequest '{"method":"GET","path":"/orders?status=eq.pending&total=gte.100&order=created_at.desc&limit=50"}'
 ```
 
 **Schema management examples (Semantius system tables):**
 ```bash
 # Read all entities in a module
-semantius-cli call crud postgrestRequest '{"method":"GET","path":"/entities?module_id=eq.3&order=table_name.asc"}'
+semantius call crud postgrestRequest '{"method":"GET","path":"/entities?module_id=eq.3&order=table_name.asc"}'
 
 # Bulk update field widths
-semantius-cli call crud postgrestRequest '{"method":"PATCH","path":"/fields?table_name=eq.products&format=eq.string","body":{"searchable":true}}'
+semantius call crud postgrestRequest '{"method":"PATCH","path":"/fields?table_name=eq.products&format=eq.string","body":{"searchable":true}}'
 ```
 
 ### `sqlToRest`
@@ -79,13 +79,13 @@ Translates a SQL query into a PostgREST path. Useful when you think in SQL and n
 | `sql` | string | yes | SQL query to convert, e.g. `SELECT * FROM products WHERE status = 'active' ORDER BY name` |
 
 ```bash
-semantius-cli call crud sqlToRest '{"sql": "SELECT id, name, price FROM products WHERE category = '\''electronics'\'' ORDER BY price DESC LIMIT 10"}'
+semantius call crud sqlToRest '{"sql": "SELECT id, name, price FROM products WHERE category = '\''electronics'\'' ORDER BY price DESC LIMIT 10"}'
 ```
 
 ### `refresh_schema_cache` *(deno server only)*
 Forces PostgREST to reload its schema cache after structural changes.
 ```bash
-semantius-cli call deno refresh_schema_cache '{}'
+semantius call deno refresh_schema_cache '{}'
 ```
 > Call this if PostgREST returns errors about unknown columns or tables after you've just added/modified fields.
 

@@ -1,6 +1,6 @@
 ---
 name: semantic-model-deployer
-description: Safely deploys a *-semantic-model.md file (produced by the semantic-model-analyst skill) to a live Semantius instance using the semantius-cli. Before any writes, reconciles the model against the existing catalog — updates an existing module in place when the slug matches, extends Semantius built-ins (`users`, `roles`, `permissions`, …) additively instead of replacing them, refuses duplicate entity names across modules, and surfaces explicit merge/rename decisions for near-duplicates (e.g. `contracts` vs `saas_contracts` vs `vendor_contracts`). Use whenever a semantic-model file exists and the user wants to deploy, apply, push, sync, integrate, reconcile, or roll out the model — including phrasings like "implement the model", "deploy the model", "apply the schema", "set up the entities", "create the entities in Semantius", "push this to Semantius", "integrate this model with what's already there", or "now make it real". Also trigger when the user uploads or references a *-semantic-model.md and asks to do anything that would materialize it. Trigger proactively when such a file is present and the user's intent is clearly to deploy it.
+description: Safely deploys a *-semantic-model.md file (produced by the semantic-model-analyst skill) to a live Semantius instance using the semantius. Before any writes, reconciles the model against the existing catalog — updates an existing module in place when the slug matches, extends Semantius built-ins (`users`, `roles`, `permissions`, …) additively instead of replacing them, refuses duplicate entity names across modules, and surfaces explicit merge/rename decisions for near-duplicates (e.g. `contracts` vs `saas_contracts` vs `vendor_contracts`). Use whenever a semantic-model file exists and the user wants to deploy, apply, push, sync, integrate, reconcile, or roll out the model — including phrasings like "implement the model", "deploy the model", "apply the schema", "set up the entities", "create the entities in Semantius", "push this to Semantius", "integrate this model with what's already there", or "now make it real". Also trigger when the user uploads or references a *-semantic-model.md and asks to do anything that would materialize it. Trigger proactively when such a file is present and the user's intent is clearly to deploy it.
 ---
 
 # semantic-model-deployer Skill
@@ -9,7 +9,7 @@ This skill bridges the gap between a self-contained semantic model (produced by 
 
 **Division of responsibility:**
 - This skill owns the *workflow* — parsing the model, inspecting what's already deployed, diffing, deduplicating against built-ins, **detecting name collisions and near-collisions across the entire entity catalog**, planning, and orchestrating the sequence of steps.
-- The **semantius-cli skill** owns the *execution* — all Semantius operations are done via the `semantius-cli` CLI tool, following that skill's patterns and reference docs.
+- The **use-semantius skill** owns the *execution* — all Semantius operations are done via the `semantius` CLI tool, following that skill's patterns and reference docs.
 
 ## Your role: gatekeeper of a unified catalog
 
@@ -28,26 +28,26 @@ Never silently coexist conflicting names. Never pick a side for the user. Resolv
 
 **This skill is designed to be re-run whenever the model changes.** Because it always inspects Semantius before acting, re-running on an updated model is safe — it diffs the new model against what's already deployed and applies only the delta (new entities, new fields, updated labels/enums). If a module with the same `system_slug` already exists, **always update that module** — never create a duplicate. Things that haven't changed are skipped. Things in Semantius that are no longer in the model are left alone.
 
-**The model is self-contained.** The semantic-model file produced by `semantic-model-analyst` declares every entity the domain needs, including ones that happen to overlap with Semantius built-ins (e.g. `users`, `roles`, `permissions`, `webhook_receivers`). Those built-ins are platform infrastructure — they control authentication, RBAC, and integration, and **must never be replaced**. They *may* be extended additively (new nullable fields on `users`, for instance). See Stage 2b.
+**The model is self-contained.** The semantic-model file produced by `semantic-model-analyst` declares every entity the domain needs, including ones that happen to overlap with Semantius built-ins (e.g. `users`, `roles`, `permissions`, `webhook_receivers`). Those built-ins are platform infrastructure — they control authentication, RBAC, and integration, and **must never be replaced**. They *may* be extended additively (new fields on `users`, for instance). See Stage 2b.
 
 ---
 
-## Step 0: Load the semantius-cli Skill
+## Step 0: Load the use-semantius Skill
 
-Before doing anything else, read the semantius-cli skill and its data-modeling reference:
+Before doing anything else, read the use-semantius skill and its data-modeling reference:
 
 ```
-Read: <skills-root>/semantius-cli/SKILL.md
-Read: <skills-root>/semantius-cli/references/data-modeling.md
+Read: <skills-root>/use-semantius/SKILL.md
+Read: <skills-root>/use-semantius/references/data-modeling.md
 ```
 
 The data-modeling reference gives you the mandatory creation order, all field formats, the Golden Rules, and exact CLI syntax. Everything in the execution stages below follows those patterns. Also read `references/cli-usage.md` if you need help with CLI invocation, piping, or error handling.
 
-All Semantius operations in this skill are performed using the **`semantius-cli` command-line tool**, for example:
+All Semantius operations in this skill are performed using the **`semantius` command-line tool**, for example:
 
 ```bash
-semantius-cli call crud read_module '{"filters": "name=eq.lead_manager"}'
-semantius-cli call crud create_entity '{"data": {...}}'
+semantius call crud read_module '{"filters": "name=eq.lead_manager"}'
+semantius call crud create_entity '{"data": {...}}'
 ```
 
 ---
@@ -78,6 +78,16 @@ Locate the `*-semantic-model.md` file. Extract:
 - **§6 Open questions** — scan both sub-sections. **§6.1 🔴 Decisions needed is a gate**: if any entry is present and unresolved, stop before Stage 4 and list the blockers to the user; ask them to either (a) answer each question so the model can be updated first via the semantic-model-analyst skill, or (b) explicitly waive and proceed at their own risk. Do not make up answers, and do not silently proceed. **§6.2 🟡 Future considerations is informational only** — note them for the user but do not block. Models that predate the two-bucket format (flat §6 list) should be treated conservatively: surface every flat entry as a potential blocker and ask the user to classify each before proceeding.
 - **Implementation notes** (§7) — always follow these
 
+### Model-to-Entity Mapping
+
+| Model line | `create_entity` / `update_entity` parameter |
+|---|---|
+| `table_name` (§3 heading) | `table_name` |
+| Singular / Plural labels | `singular_label` / `plural_label` |
+| Description | `description` |
+| Label column | `label_column` |
+| `**Audit log:** yes \| no` | `audit_log` (boolean; omit or pass `false` when the model says `no` or is silent) |
+
 ### Model-to-Field Mapping
 
 | Model column | `create_field` parameter |
@@ -85,11 +95,11 @@ Locate the `*-semantic-model.md` file. Extract:
 | Field name | `field_name` |
 | Format | `format` |
 | Label | `title` |
-| Required = yes | `is_nullable: false` |
-| Required = no | `is_nullable: true` |
 | → `table` | `reference_table` |
 | Delete mode from §4 | `reference_delete_mode` |
 | Enum values from §5 | `enum_values` |
+
+> The §3 `Required` column is captured as author intent in the model document but is **not** passed to `create_field`. The platform manages nullability internally based on format and delete-mode semantics — do not send an `is_nullable` (or equivalent) parameter.
 
 ### Fields That Are Auto-Generated — Never Create These
 
@@ -108,7 +118,7 @@ Fields that reference their own entity (e.g., `campaign.parent_campaign_id → c
 
 ## Stage 2: Inspect the Unified Catalog
 
-**Read before writing — always.** (semantius-cli Golden Rule #1)
+**Read before writing — always.** (use-semantius Golden Rule #1)
 
 This stage does four things in order: (a) resolve the module, (b) inspect built-ins, (c) load the full entity catalog, (d) classify every model entity and surface ambiguity.
 
@@ -117,7 +127,7 @@ This stage does four things in order: (a) resolve the module, (b) inspect built-
 Look up the module by `system_slug`:
 
 ```bash
-semantius-cli call crud read_module '{"filters": "module_name=eq.<system_slug>"}'
+semantius call crud read_module '{"filters": "module_name=eq.<system_slug>"}'
 ```
 
 - **Exists** → plan an `update_module` (refresh `label` and `description` from the model's `system_name` and §1 Overview). Capture the existing `module_id` to reuse. **Never create a second module with the same slug.**
@@ -127,20 +137,20 @@ If the module exists but the user's model genuinely belongs to a different domai
 
 ### 2b. Inspect Semantius built-ins
 
-The semantic model may declare entities that already exist as built-ins (`users`, `roles`, `permissions`, `permission_hierarchy`, `role_permissions`, `user_roles`, `webhook_receivers`, `webhook_receiver_logs`, `modules`, `entities`, `fields` — see `semantius-cli/references/data-modeling.md` for the authoritative list). **These tables control the platform (authentication, RBAC, integration). They must never be replaced.**
+The semantic model may declare entities that already exist as built-ins (`users`, `roles`, `permissions`, `permission_hierarchy`, `role_permissions`, `user_roles`, `webhook_receivers`, `webhook_receiver_logs`, `modules`, `entities`, `fields` — see `use-semantius/references/data-modeling.md` for the authoritative list). **These tables control the platform (authentication, RBAC, integration). They must never be replaced.**
 
 For each built-in referenced by the model:
 
 - **Skip `create_entity`** entirely. The built-in already exists; recreating would break the platform.
 - **Reuse as a `reference_table` target** for any FK in the model that points at it.
-- **Additive fields only.** If the model declares extra scalar fields on a built-in (e.g. `users.department`, `users.employee_id`), offer them to the user as `create_field` calls with `is_nullable: true`. **Never modify existing built-in fields**, never mark new fields required, never change formats or enum values on a built-in.
+- **Additive fields only.** If the model declares extra scalar fields on a built-in (e.g. `users.department`, `users.employee_id`), offer them to the user as `create_field` calls. **Never modify existing built-in fields**, never change formats or enum values on a built-in.
 
 ### 2c. Load the full entity catalog
 
 Ambiguity detection only works if you can see every entity in the instance, not just the ones in this module. Load the catalog:
 
 ```bash
-semantius-cli call crud read_entity '{}'
+semantius call crud read_entity '{}'
 ```
 
 Build an index of every existing entity keyed by `table_name`, carrying at least `{module_id, module_name, singular, plural, description, label_column}`. You will use it in 2d.
@@ -160,8 +170,8 @@ For every entity declared in the model's §2, determine which bucket it falls in
 For field-level checks on a same-module match, run the usual reads:
 
 ```bash
-semantius-cli call crud read_permission '{"filters": "permission_name=eq.<slug>:read"}'
-semantius-cli call crud read_field '{"filters": "table_name=eq.<table_name>&field_name=eq.<field_name>"}'
+semantius call crud read_permission '{"filters": "permission_name=eq.<slug>:read"}'
+semantius call crud read_field '{"filters": "table_name=eq.<table_name>&field_name=eq.<field_name>"}'
 ```
 
 ### 2e. Similarity heuristic — when to flag
@@ -181,7 +191,7 @@ If you're uncertain whether two names refer to the same concept, **flag it**. A 
 You cannot ask a useful question without first understanding both entities. For every flagged pair, pull the existing entity's fields and build a side-by-side comparison:
 
 ```bash
-semantius-cli call crud read_field '{"filters": "table_name=eq.<existing_table_name>"}'
+semantius call crud read_field '{"filters": "table_name=eq.<existing_table_name>"}'
 ```
 
 Note for each:
@@ -198,7 +208,6 @@ This comparison goes into the Stage 3 plan so the user can decide on informed gr
 | Property | Risk | Notes |
 |---|---|---|
 | Field `format` | 🛑 High — **immutable** | Cannot be changed after creation |
-| Field `is_nullable` (model is stricter) | ⚠️ Medium | May fail if nulls already exist |
 | Field `enum_values` | ⚠️ Medium | Changing values may affect existing records |
 | Entity labels, descriptions | ✅ Low | Safely updatable |
 | Field `title`, `description` | ✅ Low | Safely updatable |
@@ -292,7 +301,7 @@ If the tool is not available in the harness, fall back to labeled prose options 
 
 **Merge (a):**
 
-- Do a field-by-field mapping. For each incoming field, either point it at an existing field with the same meaning, or add it as a new nullable field on the existing entity.
+- Do a field-by-field mapping. For each incoming field, either point it at an existing field with the same meaning, or add it as a new field on the existing entity.
 - **Format mismatch on a conceptually-same field is a hard block.** Formats are immutable; a merge that requires changing a format is impossible. Fall back to rename.
 - The merged entity stays in its current module (keeps existing records and FKs intact). The incoming model's module just references it.
 
@@ -324,13 +333,13 @@ Do not proceed to Stage 4 until every 🛑 has a recorded decision. Restate the 
 
 ## Stage 4: Execute
 
-Follow the semantius-cli mandatory creation order exactly:
+Follow the use-semantius mandatory creation order exactly:
 
 ```
 Module → Permissions → Entities → Fields (per entity, in model order)
 ```
 
-Refer to `semantius-cli/references/data-modeling.md` for the exact CLI syntax for each operation. **Before executing, apply every ambiguity decision from Stage 3** to the in-memory plan — renames propagate to every `reference_table` and relationship reference in the model. The sequence:
+Refer to `use-semantius/references/data-modeling.md` for the exact CLI syntax for each operation. **Before executing, apply every ambiguity decision from Stage 3** to the in-memory plan — renames propagate to every `reference_table` and relationship reference in the model. The sequence:
 
 **4a. Module** — If missing, `create_module`. If it already exists, `update_module` with the current `label`/`description` from the model. Never create a duplicate module with the same `module_name`.
 
@@ -339,8 +348,8 @@ Refer to `semantius-cli/references/data-modeling.md` for the exact CLI syntax fo
 **4c. Entities** — Walk model §2 in order and apply each entity's bucket decision:
 
 - 🔒 Built-in → skip entirely. Do not `create_entity` for `users`, `roles`, etc.
-- ♻️ Same-module match → skip `create_entity`; fall through to 4d (field diff).
-- ✨ New → `create_entity`. After creation, correct the `label_column` field title if needed with `update_field`.
+- ♻️ Same-module match → skip `create_entity`. If the model's `**Audit log:**` value (or `singular_label` / `plural_label` / `description`) differs from the live entity, call `update_entity` to sync. Then fall through to 4d (field diff).
+- ✨ New → `create_entity`. Pass `audit_log` from the §3 `**Audit log:**` line (default `false` when the line is missing or says `no`). After creation, correct the `label_column` field title if needed with `update_field`.
 - 🛑 Resolved as **merge** → skip `create_entity`. The target is the existing entity in the other module. Record the mapping; the merge is realized in 4d by adding the non-overlapping fields additively to the existing entity.
 - 🛑 Resolved as **rename incoming** → `create_entity` using the new name. (Plan-level rewrite of `reference_table` values has already happened before this stage.)
 - 🛑 Resolved as **rename existing** → attempt `update_entity` on the existing entity's `table_name` first, before any new creates. If the platform rejects the rename, stop and return to Stage 3 — never continue silently. Once the rename succeeds, Semantius repoints every catalog-side `reference_table` automatically; no follow-up `update_field` pass is needed.
@@ -351,7 +360,7 @@ Refer to `semantius-cli/references/data-modeling.md` for the exact CLI syntax fo
 
 For ♻️ same-module matches and 🛑 merges, only create fields that don't already exist; `update_field` for safe diffs (title, description, enum extensions, searchable). Never attempt a format change — formats are immutable and that requires an analyst-level rethink.
 
-**4e. Built-in extensions** — If the user confirmed additive field extensions on a built-in (e.g. the model declares `users.department_id` and the built-in doesn't have it), create those fields after all custom entities are done. Only `create_field` with `is_nullable: true`. Do not modify existing built-in fields, do not mark new ones required, do not change formats or enum values.
+**4e. Built-in extensions** — If the user confirmed additive field extensions on a built-in (e.g. the model declares `users.department_id` and the built-in doesn't have it), create those fields after all custom entities are done. Do not modify existing built-in fields, do not change formats or enum values.
 
 **Second pass** — After all entities exist, create any self-reference fields (e.g. `departments.parent_department_id` → `departments`) and any cross-reference pairs that had to wait (e.g. the mutual `departments.manager_user_id` ↔ `users.department_id`).
 
@@ -367,7 +376,6 @@ After all creates are done:
 1. `read_entity` on each custom entity — confirm `label_column` is set
 2. `read_field` per entity — confirm field count matches the model (minus auto-generated)
 3. Spot-check that `reference_table` targets exist for FK fields (including any that point at built-ins like `users`)
-4. If any additive fields were added to built-ins, confirm they were created with `is_nullable: true`
 
 Print a final summary: "✅ Done. Created 1 module, 2 permissions, 5 entities, 47 fields. Reused built-ins: users. Additive fields on built-ins: 2."
 
@@ -416,7 +424,7 @@ Create records in dependency order (entities with no parent FKs first, junction 
 
 **Generate a single shell script** for all sample data rather than making individual CLI calls. This avoids context bloat from dozens of sequential tool invocations. Write the script to a temp file, run it once, and check the output.
 
-The script should consist of sequential `semantius-cli call crud postgrestRequest` calls, one per record, capturing inserted IDs directly from the POST response for use in FK fields.
+The script should consist of sequential `semantius call crud postgrestRequest` calls, one per record, capturing inserted IDs directly from the POST response for use in FK fields.
 
 ### postgrestRequest response envelope
 
@@ -424,7 +432,7 @@ The script should consist of sequential `semantius-cli call crud postgrestReques
 
 ```bash
 # Correct — navigate the envelope
-ID=$(semantius-cli call crud postgrestRequest '{"method":"POST","path":"/campaigns","body":{...}}' \
+ID=$(semantius call crud postgrestRequest '{"method":"POST","path":"/campaigns","body":{...}}' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['response']['data'][0]['id'])")
 
 # WRONG — treats response as a bare array, always fails with KeyError
@@ -434,7 +442,7 @@ ID=$(... | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
 The same envelope applies to GET — use `d['response']['data']` to access the array:
 
 ```bash
-COUNT=$(semantius-cli call crud postgrestRequest '{"method":"GET","path":"/campaigns?select=id"}' \
+COUNT=$(semantius call crud postgrestRequest '{"method":"GET","path":"/campaigns?select=id"}' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['response']['data']))")
 ```
 
@@ -444,7 +452,7 @@ COUNT=$(semantius-cli call crud postgrestRequest '{"method":"GET","path":"/campa
 #!/usr/bin/env bash
 set -e
 
-PG='semantius-cli call crud postgrestRequest'
+PG='semantius call crud postgrestRequest'
 
 echo "=== Seeding campaigns ==="
 C_SPRING=$($PG '{"method":"POST","path":"/campaigns","body":{"campaign_name":"Spring Launch","status":"active"}}' \
@@ -484,11 +492,10 @@ Run the complete script in one bash call and report the final output summary.
 | Field `format` mismatch | 🛑 High | Skip (keep as-is), or require rename/analyst rethink |
 | Entity label/description mismatch | ✅ Low | Offer `update_entity` (skip for built-ins) |
 | Field title/description mismatch | ✅ Low | Offer `update_field` |
-| `is_nullable` stricter in model | ⚠️ Medium | Warn, confirm before proceeding |
 | `enum_values` differ | ⚠️ Medium | Offer update, warn about impact on existing records |
 | Extra fields/entities not in model | None | Leave them alone |
 | Model declares a built-in (`users`, `roles`, …) | None | Dedup: skip create, reuse built-in as `reference_table` target; never replace |
-| Model declares extra fields on a built-in | ⚠️ Medium | Offer additive `create_field` with `is_nullable: true`; never modify existing built-in fields |
+| Model declares extra fields on a built-in | ⚠️ Medium | Offer additive `create_field`; never modify existing built-in fields |
 | **Cross-module exact-name collision** (entity with same `table_name` exists in another module) | 🛑 High — ambiguity gate | Stage 3 decision dialog: merge / rename incoming / rename existing / rename both / abort. Never silently coexist. |
 | **Similar-name collision** (root, synonym, qualifier, prefix/suffix) | 🛑 High — ambiguity gate | Same dialog as above. User may decline, in which case record the decision and proceed. |
 | Merge requires changing an immutable field format | 🛑 High | Merge is impossible — fall back to a rename option. |

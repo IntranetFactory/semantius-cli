@@ -33,14 +33,14 @@ Every entity **must** belong to a module.
 
 **Check before creating:**
 ```bash
-semantius-cli call crud read_module '{"filters": "module_name=eq.crm"}'
+semantius call crud read_module '{"filters": "module_name=eq.crm"}'
 ```
 
 **Create module + baseline permissions (always both):**
 ```bash
-semantius-cli call crud create_module '{"data": {"module_name": "crm", "label": "CRM", "description": "Customer relationship management"}}'
-semantius-cli call crud create_permission '{"data": {"permission_name": "crm:read", "description": "Read CRM data", "module_id": <id>}}'
-semantius-cli call crud create_permission '{"data": {"permission_name": "crm:manage", "description": "Manage CRM data", "module_id": <id>}}'
+semantius call crud create_module '{"data": {"module_name": "crm", "label": "CRM", "description": "Customer relationship management"}}'
+semantius call crud create_permission '{"data": {"permission_name": "crm:read", "description": "Read CRM data", "module_id": <id>}}'
+semantius call crud create_permission '{"data": {"permission_name": "crm:manage", "description": "Manage CRM data", "module_id": <id>}}'
 ```
 
 Permission naming convention: **always `<module>:<action>`** (e.g., `crm:read`, `crm:manage`, `leads:write`).
@@ -52,7 +52,7 @@ Permission naming convention: **always `<module>:<action>`** (e.g., `crm:read`, 
 ### Creating an Entity
 
 ```bash
-semantius-cli call crud create_entity '{
+semantius call crud create_entity '{
   "data": {
     "table_name": "products",
     "singular": "product",
@@ -64,7 +64,8 @@ semantius-cli call crud create_entity '{
     "module_id": 3,
     "view_permission": "catalog:read",
     "edit_permission": "catalog:manage",
-    "icon_url": "https://example.com/icon.svg"
+    "icon_url": "https://example.com/icon.svg",
+    "audit_log": false
   }
 }'
 ```
@@ -86,6 +87,7 @@ semantius-cli call crud create_entity '{
 | `view_permission` | Required — name string (e.g. `"catalog:read"`) |
 | `edit_permission` | Required — name string (e.g. `"catalog:manage"`) |
 | `icon_url` | Optional — URL to an icon representing this entity in the UI |
+| `audit_log` | Optional boolean, default `false`. When `true`, every INSERT / UPDATE / DELETE on this entity is recorded by the platform. Enable on entities where change history matters (contracts, financial records, policy data); leave off for high-volume or ephemeral data where audit noise outweighs the value. |
 
 ### Auto-Generated Fields — NEVER Create These Manually
 
@@ -158,7 +160,7 @@ Set `unique_value: true` only when duplicates would cause data integrity issues 
 
 ```bash
 # Searchable text field
-semantius-cli call crud create_field '{
+semantius call crud create_field '{
   "data": {
     "table_name": "products",
     "field_name": "description",
@@ -172,7 +174,7 @@ semantius-cli call crud create_field '{
 }'
 
 # Numeric field
-semantius-cli call crud create_field '{
+semantius call crud create_field '{
   "data": {
     "table_name": "products",
     "field_name": "price",
@@ -185,7 +187,7 @@ semantius-cli call crud create_field '{
 }'
 
 # Enum/dropdown
-semantius-cli call crud create_field '{
+semantius call crud create_field '{
   "data": {
     "table_name": "products",
     "field_name": "status",
@@ -212,7 +214,6 @@ semantius-cli call crud create_field '{
 | `input_type` | string | `default`, `required`, `readonly`, `disabled`, `hidden` |
 | `field_order` | integer | Controls display order in the UI |
 | `searchable` | boolean | Adds this field to the entity's full-text search index |
-| `is_nullable` | boolean | Whether the field accepts null values |
 | `unique_value` | boolean | Enforces uniqueness at database level |
 | `enum_values` | array | Required when `format: "enum"` — list of allowed values |
 | `reference_table` | string | Target entity's `table_name` for `reference`/`parent` fields |
@@ -225,12 +226,14 @@ semantius-cli call crud create_field '{
 
 ### Choosing the Right Format
 
-| Scenario | `format` | `reference_delete_mode` | `is_nullable` |
-|----------|----------|------------------------|---------------|
-| Optional link to independent entity | `reference` | `clear` | `true` |
-| Required link to independent entity | `reference` | `restrict` | `false` |
-| Child is owned by parent | `parent` | `cascade` | `false` |
-| M:N junction FK (both sides) | `parent` | `cascade` | `false` |
+The platform manages nullability internally based on format and delete-mode — do not pass an `is_nullable` flag. A `reference` with `clear` is optional (can be null); a `parent` with `cascade` is required.
+
+| Scenario | `format` | `reference_delete_mode` |
+|----------|----------|------------------------|
+| Optional link to independent entity | `reference` | `clear` |
+| Required link to independent entity | `reference` | `restrict` |
+| Child is owned by parent | `parent` | `cascade` |
+| M:N junction FK (both sides) | `parent` | `cascade` |
 
 ### `reference` — Cross-Entity Link (Independent Lifecycle)
 
@@ -238,7 +241,7 @@ Use when the child record is **created independently** and then associated with 
 
 ```bash
 # Order has an optional assigned sales rep
-semantius-cli call crud create_field '{
+semantius call crud create_field '{
   "data": {
     "table_name": "orders",
     "field_name": "sales_rep_id",
@@ -246,7 +249,6 @@ semantius-cli call crud create_field '{
     "format": "reference",
     "reference_table": "users",
     "reference_delete_mode": "clear",
-    "is_nullable": true,
     "width": "default",
     "input_type": "default"
   }
@@ -259,7 +261,7 @@ Use when the child record is **always created in the context of the parent** and
 
 ```bash
 # Order line belongs to an order
-semantius-cli call crud create_field '{
+semantius call crud create_field '{
   "data": {
     "table_name": "order_lines",
     "field_name": "order_id",
@@ -267,7 +269,6 @@ semantius-cli call crud create_field '{
     "format": "parent",
     "reference_table": "orders",
     "reference_delete_mode": "cascade",
-    "is_nullable": false,
     "width": "default",
     "input_type": "default"
   }
@@ -280,13 +281,13 @@ Create a junction entity and add two `parent` fields:
 
 ```bash
 # Create junction entity
-semantius-cli call crud create_entity '{"data": {"table_name": "product_tags", ...}}'
+semantius call crud create_entity '{"data": {"table_name": "product_tags", ...}}'
 
 # FK to products
-semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "field_name": "product_id", "format": "parent", "reference_table": "products", "reference_delete_mode": "cascade", "is_nullable": false, "width": "default", "input_type": "default"}}'
+semantius call crud create_field '{"data": {"table_name": "product_tags", "field_name": "product_id", "format": "parent", "reference_table": "products", "reference_delete_mode": "cascade", "width": "default", "input_type": "default"}}'
 
 # FK to tags
-semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "field_name": "tag_id", "format": "parent", "reference_table": "tags", "reference_delete_mode": "cascade", "is_nullable": false, "width": "default", "input_type": "default"}}'
+semantius call crud create_field '{"data": {"table_name": "product_tags", "field_name": "tag_id", "format": "parent", "reference_table": "tags", "reference_delete_mode": "cascade", "width": "default", "input_type": "default"}}'
 ```
 
 ---
@@ -294,14 +295,13 @@ semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "f
 ## Safe Evolution Patterns
 
 ### ✅ Low-Risk (do freely)
-- Add new nullable fields or fields with defaults
+- Add new fields
 - Update descriptions, labels, UI hints (`width`, `field_order`, `icon_url`)
 - Add `searchable: true` to fields
 - Create new entities in new or existing modules
 - Add new permissions/roles/assignments
 
 ### ⚠️ Medium-Risk (warn user first)
-- Making nullable fields required (`is_nullable: false`)
 - Changing `reference_delete_mode`
 - Adding `view_permission`/`edit_permission` to previously open entities
 - Changing `enum_values`
@@ -322,7 +322,7 @@ semantius-cli call crud create_field '{"data": {"table_name": "product_tags", "f
 
 ```bash
 # Update entity metadata (safe — low risk)
-semantius-cli call crud update_entity '{
+semantius call crud update_entity '{
   "table_name": "products",
   "data": {
     "description": "Updated description",
@@ -331,7 +331,7 @@ semantius-cli call crud update_entity '{
 }'
 
 # Update a field (only changed attributes needed)
-semantius-cli call crud update_field '{
+semantius call crud update_field '{
   "id": "<field-id>",
   "data": {
     "title": "New Title",
@@ -340,13 +340,13 @@ semantius-cli call crud update_field '{
 }'
 
 # Delete field — requires explicit user confirmation first
-semantius-cli call crud delete_field '{"id": "<field-id>"}'
+semantius call crud delete_field '{"id": "<field-id>"}'
 
 # Delete entity — check all dependencies first!
 # 1. Check for fields referencing this entity
-semantius-cli call crud read_field '{"filters": "reference_table=eq.<table_name>"}'
+semantius call crud read_field '{"filters": "reference_table=eq.<table_name>"}'
 # 2. Only proceed if no references found and user has confirmed
-semantius-cli call crud delete_entity '{"table_name": "<table_name>"}'
+semantius call crud delete_entity '{"table_name": "<table_name>"}'
 ```
 
 ---
@@ -366,11 +366,11 @@ Use `wfts` (web full-text search) on the `search_vector` column when the entity 
 
 ```bash
 # Check if entity is searchable
-semantius-cli call crud read_entity '{"filters": "table_name=eq.contacts"}'
+semantius call crud read_entity '{"filters": "table_name=eq.contacts"}'
 # Look for searchable: true in response
 
 # Full-text search
-semantius-cli call crud postgrestRequest '{
+semantius call crud postgrestRequest '{
   "method": "GET",
   "path": "/contacts?search_vector=wfts.Monica"
 }'
@@ -413,10 +413,10 @@ Only use `postgrestRequest` or `sqlToRest` for:
 ### "Permission denied" errors
 ```bash
 # 1. Get current user and their effective permissions
-semantius-cli call crud getCurrentUser '{}'
+semantius call crud getCurrentUser '{}'
 
 # 2. Check entity's required permissions
-semantius-cli call crud read_entity '{"filters": "table_name=eq.<table>"}'
+semantius call crud read_entity '{"filters": "table_name=eq.<table>"}'
 
 # 3. Trace: user → user_roles → role_permissions → permission_hierarchy
 ```

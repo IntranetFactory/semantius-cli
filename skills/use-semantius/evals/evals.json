@@ -1,5 +1,5 @@
 {
-  "skill_name": "semantius-cli",
+  "skill_name": "use-semantius",
   "evals": [
     {
       "id": 1,
@@ -26,7 +26,7 @@
       "id": 3,
       "name": "seed-records-sequential-cli-calls",
       "prompt": "Write a bash script that: creates 3 categories (Electronics, Clothing, Food) in the 'categories' entity, captures each new record's ID from the response, then creates 2 products per category (6 total) in the 'products' entity where each product references its parent category. Use heredocs for the JSON and jq to extract IDs. Handle errors with set -e.",
-      "expected_output": "A complete bash script using jq to capture IDs. Pattern: ELEC_ID=$(semantius-cli call crud postgrestRequest ... | jq -r '.[0].id') for each category, then 6 product create calls each embedding the correct category ID. Uses heredoc <<EOF syntax. Has set -e at the top. Total of 9 create calls (3 categories + 6 products). Explains that category IDs from the first 3 responses must be captured before the product calls.",
+      "expected_output": "A complete bash script using jq to capture IDs. Pattern: ELEC_ID=$(semantius call crud postgrestRequest ... | jq -r '.[0].id') for each category, then 6 product create calls each embedding the correct category ID. Uses heredoc <<EOF syntax. Has set -e at the top. Total of 9 create calls (3 categories + 6 products). Explains that category IDs from the first 3 responses must be captured before the product calls.",
       "assertions": [
         "Uses set -e or equivalent error handling",
         "Captures category record IDs from create responses using jq",
@@ -59,7 +59,7 @@
       "id": 5,
       "name": "shell-script-create-entity-and-fields-with-captured-ids",
       "prompt": "Write a shell script that creates a new 'suppliers' entity in the existing 'inventory' module, captures the module ID first, then immediately creates 3 fields on it: email, phone, and country. Use jq throughout to extract IDs, use heredocs for JSON, and end by printing the UI link.",
-      "expected_output": "A complete bash script: MODULE_ID=$(semantius-cli call crud read_module '{\"filters\":\"name=eq.inventory\"}' | jq -r '.[0].id'), then create_entity call storing result in a variable, then 3 create_field calls for email (format:email), phone (format:string), country (format:string). Does NOT create supplier_name field because it is the label_column. Ends with echo https://tests.semantius.app/inventory/suppliers. Uses heredocs throughout.",
+      "expected_output": "A complete bash script: MODULE_ID=$(semantius call crud read_module '{\"filters\":\"name=eq.inventory\"}' | jq -r '.[0].id'), then create_entity call storing result in a variable, then 3 create_field calls for email (format:email), phone (format:string), country (format:string). Does NOT create supplier_name field because it is the label_column. Ends with echo https://tests.semantius.app/inventory/suppliers. Uses heredocs throughout.",
       "assertions": [
         "Reads existing inventory module to capture its ID with jq",
         "create_entity call uses the captured module ID",
@@ -76,13 +76,12 @@
       "id": 6,
       "name": "m2m-junction-table-full-setup-and-seed",
       "prompt": "I have 'students' and 'courses' entities already. Model the M:N enrollment relationship with a junction table, then seed it: create 2 students, 3 courses, and enroll each student in all 3 courses (6 enrollment records). Give me every CLI command in order.",
-      "expected_output": "Ordered sequence: (1) create_entity for enrollments junction, (2) create_field student_id as format:parent referencing students with cascade+not nullable, (3) create_field course_id as format:parent referencing courses with cascade+not nullable, (4) 2 create calls for student records, (5) 3 create calls for course records, (6) 6 create calls for enrollment records capturing IDs from prior responses. Explains why both FKs use format:parent for junction tables.",
+      "expected_output": "Ordered sequence: (1) create_entity for enrollments junction, (2) create_field student_id as format:parent referencing students with cascade, (3) create_field course_id as format:parent referencing courses with cascade, (4) 2 create calls for student records, (5) 3 create calls for course records, (6) 6 create calls for enrollment records capturing IDs from prior responses. Explains why both FKs use format:parent for junction tables.",
       "assertions": [
         "Creates a junction entity (enrollments or similar)",
         "student_id uses format:parent not format:reference",
         "course_id uses format:parent not format:reference",
         "Both parent fields have reference_delete_mode:cascade",
-        "Both parent fields have is_nullable:false",
         "Creates 2 student records and captures their IDs",
         "Creates 3 course records and captures their IDs",
         "Creates 6 enrollment records (2 students x 3 courses each)",

@@ -27,10 +27,10 @@ The `joins` property on each cube shows related cubes. You can include dimension
 
 ```bash
 # Broad discover
-semantius-cli call cube discover '{}'
+semantius call cube discover '{}'
 
 # Targeted discover
-semantius-cli call cube discover '{"topic": "sales", "intent": "analyze revenue by region", "limit": 5}'
+semantius call cube discover '{"topic": "sales", "intent": "analyze revenue by region", "limit": 5}'
 ```
 
 ---
@@ -51,7 +51,7 @@ Validates a query and returns auto-corrections for any issues found.
 **Returns:** corrected query (if issues found) + the generated SQL for debugging.
 
 ```bash
-semantius-cli call cube validate '{
+semantius call cube validate '{
   "query": {
     "measures": ["Sales.count"],
     "dimensions": ["Products.category"],
@@ -73,7 +73,7 @@ Executes a semantic query and returns data. Requires `discover` to have been cal
 Supports regular queries (measures/dimensions), funnel, flow, and retention analysis modes.
 
 ```bash
-semantius-cli call cube load '{
+semantius call cube load '{
   "query": {
     "measures": ["Sales.revenue"],
     "dimensions": ["Products.category"],
@@ -134,7 +134,7 @@ Same as `load` but renders an interactive chart in the UI. Takes an additional o
 | `table` | Tabular data when no chart type fits better |
 
 ```bash
-semantius-cli call cube chart '{
+semantius call cube chart '{
   "query": {
     "measures": ["Sales.revenue"],
     "dimensions": ["Products.category"]
